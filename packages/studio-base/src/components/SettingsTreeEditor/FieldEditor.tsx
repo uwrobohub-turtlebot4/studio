@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import { SettingsTreeField } from "@foxglove/studio";
+import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { ColorPickerInput } from "./inputs/ColorPickerInput";
@@ -135,6 +136,15 @@ export function FieldEditor({
             variant="filled"
             fullWidth
             onChange={(event) => update(event.target.value)}
+          />
+        );
+      }
+      case "messagepath": {
+        return (
+          <MessagePathInput
+            path={field.value ?? ""}
+            onChange={(value) => update(value)}
+            validTypes={field.validTypes}
           />
         );
       }

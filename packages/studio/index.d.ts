@@ -37,6 +37,7 @@ declare module "@foxglove/studio" {
     | { input: "boolean"; value?: boolean }
     | { input: "color"; value?: string }
     | { input: "gradient"; value?: string }
+    | { input: "messagepath"; value?: string; validTypes?: string[] }
     | { input: "number"; value?: number }
     | { input: "select"; value?: string; options: string[] }
     | { input: "string"; value?: string }

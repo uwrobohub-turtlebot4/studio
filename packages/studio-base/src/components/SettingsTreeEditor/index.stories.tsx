@@ -7,7 +7,10 @@ import produce from "immer";
 import { useCallback, useMemo } from "react";
 
 import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "@foxglove/studio";
+import { MessagePathInputStoryFixture } from "@foxglove/studio-base/components/MessagePathSyntax/fixture";
+import MockPanelContextProvider from "@foxglove/studio-base/components/MockPanelContextProvider";
 import SettingsTreeEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
+import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
 
 export default {
   title: "components/SettingsTreeEditor",
@@ -16,6 +19,20 @@ export default {
 
 const DefaultSettings: SettingsTreeNode = {
   children: {
+    complex_inputs: {
+      label: "Complex Inputs",
+      fields: {
+        messagepath: {
+          label: "Message Path",
+          input: "messagepath",
+        },
+        topic: {
+          label: "Topic",
+          input: "autocomplete",
+          items: ["topic1", "topic2", "topic3"],
+        },
+      },
+    },
     background: {
       label: "Background",
       fields: {
@@ -204,16 +221,6 @@ const DefaultSettings: SettingsTreeNode = {
         },
       },
     },
-    topic_selector: {
-      label: "Topic Selector",
-      fields: {
-        topic: {
-          label: "Topic",
-          input: "autocomplete",
-          items: ["topic1", "topic2", "topic3"],
-        },
-      },
-    },
     pose: {
       label: "Pose",
       fields: {
@@ -264,8 +271,12 @@ export const Default = (): JSX.Element => {
   );
 
   return (
-    <Box bgcolor="background.paper" overflow="auto">
-      <SettingsTreeEditor settings={settings} />
-    </Box>
+    <MockPanelContextProvider>
+      <PanelSetup fixture={MessagePathInputStoryFixture}>
+        <Box bgcolor="background.paper" overflow="auto">
+          <SettingsTreeEditor settings={settings} />
+        </Box>
+      </PanelSetup>
+    </MockPanelContextProvider>
   );
 };
