@@ -43,6 +43,7 @@ export const messages = Object.freeze([
   },
 ] as const);
 
+// ts-prune-ignore-next
 export const MessagePathInputStoryFixture: Fixture = {
   datatypes: new Map(
     Object.entries({
