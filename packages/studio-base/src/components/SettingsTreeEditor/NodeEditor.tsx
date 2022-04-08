@@ -128,11 +128,7 @@ function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
   const fieldEditors = Object.entries(fields ?? {}).map(([key, field]) => {
     const stablePath = (stablePaths[key] ??= [...props.path, key]);
     return (
-      <FieldEditor
-        key={key}
-        field={field}
-        update={(value: unknown) => updateSettings(stablePath, value)}
-      />
+      <FieldEditor key={key} field={field} path={stablePath} updateSettings={updateSettings} />
     );
   });
 

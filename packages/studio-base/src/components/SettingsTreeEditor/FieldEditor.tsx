@@ -15,6 +15,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import { useCallback } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
@@ -164,13 +165,22 @@ function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unkn
   }
 }
 
-export function FieldEditor({
+function FieldEditorComponent({
   field,
-  update,
+  path,
+  updateSettings,
 }: {
   field: DeepReadonly<SettingsTreeField>;
-  update: (value: unknown) => void;
+  path: readonly string[];
+  updateSettings: (path: readonly string[], value: unknown) => void;
 }): JSX.Element {
+  const update = useCallback(
+    (value: unknown) => {
+      updateSettings(path, value);
+    },
+    [path, updateSettings],
+  );
+
   return (
     <>
       <Stack direction="row" alignItems="center">
@@ -195,3 +205,5 @@ export function FieldEditor({
     </>
   );
 }
+
+export const FieldEditor = React.memo(FieldEditorComponent);
