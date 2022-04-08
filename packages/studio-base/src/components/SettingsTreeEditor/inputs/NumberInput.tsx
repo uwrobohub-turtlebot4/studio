@@ -51,8 +51,8 @@ export function NumberInput(
     increment?: number;
     iconUp?: ReactNode;
     iconDown?: ReactNode;
-    value: number;
-    onChange: (value: number) => void;
+    value?: number;
+    onChange: (value: undefined | number) => void;
   } & Omit<TextFieldProps, "onChange">,
 ): JSX.Element {
   const { value, iconDown, iconUp, increment = 1, onChange } = props;
@@ -65,14 +65,16 @@ export function NumberInput(
     <StyledTextField
       {...props}
       value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
+      onChange={(event) =>
+        onChange(event.target.value.length > 0 ? Number(event.target.value) : undefined)
+      }
       type="number"
       InputProps={{
         startAdornment: (
           <StyledIconButton
             size="small"
             edge="start"
-            onClick={() => onChange(value - incrementAmount)}
+            onClick={() => value != undefined && onChange(value - incrementAmount)}
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
           </StyledIconButton>
@@ -81,7 +83,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="end"
-            onClick={() => onChange(value + incrementAmount)}
+            onClick={() => value != undefined && onChange(value + incrementAmount)}
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}
           </StyledIconButton>

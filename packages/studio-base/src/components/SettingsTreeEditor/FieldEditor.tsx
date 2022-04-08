@@ -79,7 +79,7 @@ export function FieldEditor({
           <NumberInput
             size="small"
             variant="filled"
-            value={field.value ?? 0}
+            value={field.value}
             placeholder={field.placeholder}
             fullWidth
             onChange={(value) => update(value)}

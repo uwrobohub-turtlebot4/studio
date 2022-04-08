@@ -104,7 +104,7 @@ const DefaultSettings: SettingsTreeNode = {
         },
         size: {
           label: "Size",
-          value: 10,
+          value: undefined,
           input: "number",
         },
         subdivision: {
