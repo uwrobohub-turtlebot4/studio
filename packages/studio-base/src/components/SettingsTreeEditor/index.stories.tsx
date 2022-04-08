@@ -237,16 +237,17 @@ const DefaultSettings: SettingsTreeNode = {
 
 function updateSettingsTreeNode(
   previous: SettingsTreeNode,
-  path: string[],
+  path: readonly string[],
   value: unknown,
 ): SettingsTreeNode {
+  const workingPath = [...path];
   return produce(previous, (draft) => {
     let node: undefined | Partial<SettingsTreeNode> = draft;
-    while (node != undefined && path.length > 1) {
-      const key = path.shift()!;
+    while (node != undefined && workingPath.length > 1) {
+      const key = workingPath.shift()!;
       node = node.children?.[key];
     }
-    const key = path.shift()!;
+    const key = workingPath.shift()!;
     const field = node?.fields?.[key];
     if (field != undefined) {
       field.value = value as SettingsTreeFieldValue["value"];

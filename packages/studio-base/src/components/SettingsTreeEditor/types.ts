@@ -30,7 +30,7 @@ export type SettingsTreeNode = {
 
 export type SettingsTreeAction = {
   action: "update";
-  payload: { path: string[]; value: unknown };
+  payload: { path: readonly string[]; value: unknown };
 };
 
 /**

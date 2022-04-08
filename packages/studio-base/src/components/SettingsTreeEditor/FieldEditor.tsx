@@ -15,7 +15,6 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { useMemo } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
@@ -54,6 +53,116 @@ const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   },
 }));
 
+function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unknown) => void) {
+  switch (field.input) {
+    case "autocomplete":
+      return (
+        <Autocomplete
+          freeSolo={true}
+          value={field.value}
+          renderInput={(params) => <TextField {...params} variant="filled" size="small" />}
+          onInputChange={(_event, value) => update(value)}
+          onChange={(_event, value) => update(value)}
+          options={field.items}
+        />
+      );
+    case "number":
+      return (
+        <NumberInput
+          size="small"
+          variant="filled"
+          value={field.value}
+          placeholder={field.placeholder}
+          fullWidth
+          onChange={(value) => update(value)}
+        />
+      );
+    case "toggle":
+      return (
+        <StyledToggleButtonGroup
+          fullWidth
+          value={field.value}
+          exclusive
+          size="small"
+          onChange={(_event, value) => update(value)}
+        >
+          {field.options.map((opt) => (
+            <ToggleButton key={opt} value={opt}>
+              {opt}
+            </ToggleButton>
+          ))}
+        </StyledToggleButtonGroup>
+      );
+    case "string": {
+      return (
+        <TextField
+          variant="filled"
+          size="small"
+          fullWidth
+          value={field.value}
+          placeholder={field.placeholder}
+          onChange={(event) => update(event.target.value)}
+        />
+      );
+    }
+    case "boolean": {
+      return (
+        <StyledToggleButtonGroup
+          fullWidth
+          value={field.value}
+          exclusive
+          size="small"
+          onChange={(_event, value) => update(value)}
+        >
+          <ToggleButton value={true}>On</ToggleButton>
+          <ToggleButton value={false}>Off</ToggleButton>
+        </StyledToggleButtonGroup>
+      );
+    }
+    case "color": {
+      return (
+        <ColorPickerInput
+          value={field.value?.toString()}
+          size="small"
+          variant="filled"
+          fullWidth
+          onChange={(value) => update(value)}
+        />
+      );
+    }
+    case "messagepath": {
+      return (
+        <MessagePathInput
+          path={field.value ?? ""}
+          onChange={(value) => update(value)}
+          validTypes={field.validTypes}
+        />
+      );
+    }
+    case "select": {
+      return (
+        <Select
+          size="small"
+          fullWidth
+          variant="filled"
+          value={field.value}
+          onChange={(event) => update(event.target.value)}
+          MenuProps={{ MenuListProps: { dense: true } }}
+        >
+          {field.options.map((opt) => (
+            <MenuItem key={opt} value={opt}>
+              {opt}
+            </MenuItem>
+          ))}
+        </Select>
+      );
+    }
+    case "gradient": {
+      return <ColorScalePicker color="inherit" size="small" />;
+    }
+  }
+}
+
 export function FieldEditor({
   field,
   update,
@@ -61,116 +170,6 @@ export function FieldEditor({
   field: DeepReadonly<SettingsTreeField>;
   update: (value: unknown) => void;
 }): JSX.Element {
-  const input: JSX.Element = useMemo(() => {
-    switch (field.input) {
-      case "autocomplete":
-        return (
-          <Autocomplete
-            freeSolo={true}
-            value={field.value}
-            renderInput={(params) => <TextField {...params} variant="filled" size="small" />}
-            onInputChange={(_event, value) => update(value)}
-            onChange={(_event, value) => update(value)}
-            options={field.items}
-          />
-        );
-      case "number":
-        return (
-          <NumberInput
-            size="small"
-            variant="filled"
-            value={field.value}
-            placeholder={field.placeholder}
-            fullWidth
-            onChange={(value) => update(value)}
-          />
-        );
-      case "toggle":
-        return (
-          <StyledToggleButtonGroup
-            fullWidth
-            value={field.value}
-            exclusive
-            size="small"
-            onChange={(_event, value) => update(value)}
-          >
-            {field.options.map((opt) => (
-              <ToggleButton key={opt} value={opt}>
-                {opt}
-              </ToggleButton>
-            ))}
-          </StyledToggleButtonGroup>
-        );
-      case "string": {
-        return (
-          <TextField
-            variant="filled"
-            size="small"
-            fullWidth
-            value={field.value}
-            placeholder={field.placeholder}
-            onChange={(event) => update(event.target.value)}
-          />
-        );
-      }
-      case "boolean": {
-        return (
-          <StyledToggleButtonGroup
-            fullWidth
-            value={field.value}
-            exclusive
-            size="small"
-            onChange={(_event, value) => update(value)}
-          >
-            <ToggleButton value={true}>On</ToggleButton>
-            <ToggleButton value={false}>Off</ToggleButton>
-          </StyledToggleButtonGroup>
-        );
-      }
-      case "color": {
-        return (
-          <ColorPickerInput
-            value={field.value?.toString()}
-            size="small"
-            variant="filled"
-            fullWidth
-            onChange={(value) => update(value)}
-          />
-        );
-      }
-      case "messagepath": {
-        return (
-          <MessagePathInput
-            path={field.value ?? ""}
-            onChange={(value) => update(value)}
-            validTypes={field.validTypes}
-          />
-        );
-      }
-      case "select": {
-        return (
-          <Select
-            size="small"
-            fullWidth
-            variant="filled"
-            value={field.value}
-            onChange={(event) => update(event.target.value)}
-            MenuProps={{ MenuListProps: { dense: true } }}
-          >
-            {field.options.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      }
-      case "gradient": {
-        return <ColorScalePicker color="inherit" size="small" />;
-      }
-    }
-  }, [field, update]);
-
   return (
     <>
       <Stack direction="row" alignItems="center">
@@ -191,7 +190,7 @@ export function FieldEditor({
           </Tooltip>
         )}
       </Stack>
-      <div>{input}</div>
+      <div>{buildInput(field, update)}</div>
     </>
   );
 }

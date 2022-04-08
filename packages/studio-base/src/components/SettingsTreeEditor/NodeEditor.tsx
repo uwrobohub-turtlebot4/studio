@@ -17,7 +17,7 @@ import {
   ListItemText,
   styled as muiStyled,
 } from "@mui/material";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -33,10 +33,10 @@ export type NodeEditorProps = {
   group?: string;
   icon?: JSX.Element;
   onClick?: ListItemButtonProps["onClick"];
-  path: string[];
+  path: readonly string[];
   secondaryAction?: ListItemProps["secondaryAction"];
   settings?: DeepReadonly<SettingsTreeNode>;
-  updateSettings?: (path: string[], value: unknown) => void;
+  updateSettings?: (path: readonly string[], value: unknown) => void;
 };
 
 const StyledListItem = muiStyled(ListItem, {
@@ -99,7 +99,7 @@ const LayerOptions = muiStyled("div", {
   opacity: visible ? 1 : 0.6,
 }));
 
-export function NodeEditor(props: NodeEditorProps): JSX.Element {
+function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
   const {
     icon,
     defaultOpen = true,
@@ -119,23 +119,35 @@ export function NodeEditor(props: NodeEditorProps): JSX.Element {
   const { fields, children } = settings;
   const hasProperties = fields != undefined || children != undefined;
 
-  const fieldEditors = Object.entries(fields ?? {}).map(([key, field]) => (
-    <FieldEditor
-      key={key}
-      field={field}
-      update={(value: unknown) => updateSettings([...props.path, key], value)}
-    />
-  ));
+  // Provide stable subpaths so that memoization works.
+  const stablePaths = useMemo<Record<string, readonly string[]>>(
+    () => ({ "": props.path }),
+    [props.path],
+  );
 
-  const childNodes = Object.entries(children ?? {}).map(([key, child]) => (
-    <NodeEditor
-      disableIcon={props.path.length > 0}
-      key={key}
-      settings={child}
-      updateSettings={updateSettings}
-      path={[...props.path, key]}
-    />
-  ));
+  const fieldEditors = Object.entries(fields ?? {}).map(([key, field]) => {
+    const stablePath = (stablePaths[key] ??= [...props.path, key]);
+    return (
+      <FieldEditor
+        key={key}
+        field={field}
+        update={(value: unknown) => updateSettings(stablePath, value)}
+      />
+    );
+  });
+
+  const childNodes = Object.entries(children ?? {}).map(([key, child]) => {
+    const stablePath = (stablePaths[key] ??= [...props.path, key]);
+    return (
+      <NodeEditor
+        disableIcon={props.path.length > 0}
+        key={key}
+        settings={child}
+        updateSettings={updateSettings}
+        path={stablePath}
+      />
+    );
+  });
 
   const indent: number = props.path.length;
 
@@ -197,3 +209,5 @@ export function NodeEditor(props: NodeEditorProps): JSX.Element {
     </>
   );
 }
+
+export const NodeEditor = React.memo(NodeEditorComponent);

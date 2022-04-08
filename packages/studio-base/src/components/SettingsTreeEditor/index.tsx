@@ -20,18 +20,21 @@ const StyledAppBar = muiStyled(AppBar, { skipSx: true })(({ theme }) => ({
   padding: theme.spacing(1),
 }));
 
+const ROOT_PATH: readonly string[] = [];
+
 export default function SettingsTreeEditor({
   settings,
 }: {
   settings: DeepReadonly<SettingsTree>;
 }): JSX.Element {
+  const { actionHandler } = settings;
   const [filterText, setFilterText] = useState<string>("");
 
   const updater = useCallback(
-    (path: string[], value: unknown) => {
-      settings.actionHandler({ action: "update", payload: { path, value } });
+    (path: readonly string[], value: unknown) => {
+      actionHandler({ action: "update", payload: { path, value } });
     },
-    [settings],
+    [actionHandler],
   );
 
   return (
@@ -59,7 +62,7 @@ export default function SettingsTreeEditor({
         />
       </StyledAppBar>
       <List dense disablePadding>
-        <NodeEditor path={[]} settings={settings.settings} updateSettings={updater} />
+        <NodeEditor path={ROOT_PATH} settings={settings.settings} updateSettings={updater} />
       </List>
     </Stack>
   );
