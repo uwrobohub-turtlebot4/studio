@@ -130,12 +130,11 @@ export function FieldEditor({
       case "color": {
         return (
           <ColorPickerInput
-            defaultValue={field.value?.toString()}
             value={field.value?.toString()}
             size="small"
             variant="filled"
             fullWidth
-            onChange={(event) => update(event.target.value)}
+            onChange={(value) => update(value)}
           />
         );
       }
