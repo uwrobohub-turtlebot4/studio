@@ -6,11 +6,12 @@ import { Box } from "@mui/material";
 import produce from "immer";
 import { useCallback, useMemo } from "react";
 
-import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "@foxglove/studio";
 import { MessagePathInputStoryFixture } from "@foxglove/studio-base/components/MessagePathSyntax/fixture";
 import MockPanelContextProvider from "@foxglove/studio-base/components/MockPanelContextProvider";
 import SettingsTreeEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
 import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
+
+import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "./types";
 
 export default {
   title: "components/SettingsTreeEditor",

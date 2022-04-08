@@ -13,7 +13,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useUnmount } from "react-use";
 import { v4 as uuid } from "uuid";
 
 import Logger from "@foxglove/log";
@@ -25,7 +24,6 @@ import {
   PanelExtensionContext,
   ParameterValue,
   RenderState,
-  SettingsTree,
   Topic,
 } from "@foxglove/studio";
 import {
@@ -34,6 +32,7 @@ import {
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
+import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
 import {
   useClearHoverValue,
@@ -148,10 +147,6 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const colorScheme = useTheme().isInverted ? "dark" : "light";
 
   const appConfiguration = useAppConfiguration();
-
-  const { id: panelLayoutId } = usePanelContext();
-
-  const { publishPanelSettingsTree } = useContext(PanelSettingsEditorContext);
 
   // renderPanelImpl invokes the panel extension context's render function with updated
   // render state fields.
@@ -352,7 +347,15 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   useMessagePipeline(messagePipelineSelector);
 
-  useUnmount(() => publishPanelSettingsTree(panelLayoutId, undefined));
+  const { publishPanelSettingsTree } = useContext(PanelSettingsEditorContext);
+  const { id: panelLayoutId } = usePanelContext();
+
+  const publishSettings = useCallback(
+    (settings: SettingsTree) => {
+      publishPanelSettingsTree(panelLayoutId, settings);
+    },
+    [panelLayoutId, publishPanelSettingsTree],
+  );
 
   type PartialPanelExtensionContext = Omit<PanelExtensionContext, "panelElement">;
   const partialExtensionContext = useMemo<PartialPanelExtensionContext>(() => {
@@ -372,15 +375,14 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     };
 
     return {
+      // This is here temporarily until the new panel settings API is ready. Do not use.
+      __publishPanelSettingsTree: publishSettings,
+
       initialState: configRef.current,
 
       saveState: saveConfig,
 
       layout,
-
-      publishPanelSettingsTree: (settings: SettingsTree) => {
-        publishPanelSettingsTree(panelLayoutId, settings);
-      },
 
       seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
 
@@ -486,17 +488,16 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       },
     };
   }, [
+    capabilities,
+    clearHoverValue,
+    openSiblingPanel,
+    panelId,
+    publishSettings,
+    requestBackfill,
     saveConfig,
     seekPlayback,
-    capabilities,
-    openSiblingPanel,
-    publishPanelSettingsTree,
-    panelLayoutId,
-    clearHoverValue,
     setHoverValue,
     setSubscriptions,
-    panelId,
-    requestBackfill,
   ]);
 
   const panelContainerRef = useRef<HTMLDivElement>(ReactNull);

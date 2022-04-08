@@ -32,46 +32,6 @@ declare module "@foxglove/studio" {
     datatype: string;
   };
 
-  export type SettingsTreeFieldValue =
-    | { input: "autocomplete"; value?: string; items: string[] }
-    | { input: "boolean"; value?: boolean }
-    | { input: "color"; value?: string }
-    | { input: "gradient"; value?: string }
-    | { input: "messagepath"; value?: string; validTypes?: string[] }
-    | { input: "number"; value?: number }
-    | { input: "select"; value?: string; options: string[] }
-    | { input: "string"; value?: string }
-    | { input: "toggle"; value?: string; options: string[] };
-
-  export type SettingsTreeField = SettingsTreeFieldValue & {
-    label: string;
-    help?: string;
-    placeholder?: string;
-  };
-
-  export type SettingsTreeFields = Record<string, SettingsTreeField>;
-  export type SettingsTreeChildren = Record<string, SettingsTreeNode>;
-
-  export type SettingsTreeNode = {
-    label?: string;
-    fields?: SettingsTreeFields;
-    children?: SettingsTreeChildren;
-  };
-
-  export type SettingsTreeAction = {
-    action: "update";
-    payload: { path: string[]; value: unknown };
-  };
-
-  /**
-   * A settings tree is a tree of panel settings that can be managed by
-   * a default user interface in Studio.
-   */
-  export type SettingsTree = {
-    actionHandler: (action: SettingsTreeAction) => void;
-    settings: SettingsTreeNode;
-  };
-
   /**
    * A message event frames message data with the topic and receive time
    */
@@ -137,11 +97,6 @@ declare module "@foxglove/studio" {
 
   export interface RenderState {
     /**
-     * The panel configuration.
-     */
-    configuration?: Record<string, unknown>;
-
-    /**
      * The latest messages for the current render frame. These are new messages since the last render frame.
      */
     currentFrame?: readonly MessageEvent<unknown>[];
@@ -196,11 +151,6 @@ declare module "@foxglove/studio" {
 
     /** Actions the panel may perform related to the user's current layout. */
     readonly layout: LayoutActions;
-
-    /**
-     * Publish a settings UI description.
-     */
-    publishPanelSettingsTree: (settings: SettingsTree) => void;
 
     /**
      * Subscribe to updates on this field within the render state. Render will only be invoked when
