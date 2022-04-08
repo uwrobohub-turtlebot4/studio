@@ -3,13 +3,22 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import css from "@emotion/css";
-import React, { useRef, useLayoutEffect, useEffect, useState, useMemo } from "react";
+import React, { useRef, useLayoutEffect, useEffect, useState, useMemo, useCallback } from "react";
 import { useResizeDetector } from "react-resize-detector";
+import { clamp } from "three/src/math/MathUtils";
+import { DeepPartial } from "ts-essentials";
 
 import Logger from "@foxglove/log";
-import { CameraListener, CameraStore, DEFAULT_CAMERA_STATE } from "@foxglove/regl-worldview";
+import { CameraListener, CameraState, CameraStore } from "@foxglove/regl-worldview";
 import { toNanoSec } from "@foxglove/rostime";
-import { PanelExtensionContext, RenderState, Topic, MessageEvent } from "@foxglove/studio";
+import {
+  PanelExtensionContext,
+  RenderState,
+  Topic,
+  MessageEvent,
+  SettingsTreeAction,
+  SettingsTreeNode,
+} from "@foxglove/studio";
 import useCleanup from "@foxglove/studio-base/hooks/useCleanup";
 
 import { DebugGui } from "./DebugGui";
@@ -29,6 +38,36 @@ import {
   OccupancyGrid,
   OCCUPANCY_GRID_DATATYPES,
 } from "./ros";
+
+const DEFAULT_CAMERA_STATE: CameraState = {
+  distance: 75,
+  perspective: true,
+  phi: Math.PI / 4,
+  target: [0, 0, 0],
+  targetOffset: [0, 0, 0],
+  targetOrientation: [0, 0, 0, 1],
+  thetaOffset: 0,
+  fovy: Math.PI / 4,
+  near: 0.01,
+  far: 10_000,
+};
+const DEG_TO_RAD = Math.PI / 180;
+
+type Vec3 = [number, number, number];
+type Vec4 = [number, number, number, number];
+
+type Config = {
+  background: {
+    color?: string;
+  };
+  light: {
+    ambientColor?: [string, string];
+    ambientIntensity?: number;
+    directionalColor?: string;
+    directionalIntensity?: number;
+  };
+  camera: CameraState;
+};
 
 const SHOW_STATS = true;
 const SHOW_DEBUG = false;
@@ -168,6 +207,22 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
     renderer?.dispose();
   });
 
+  // Persisted configuration
+  const [config, setConfig] = useState<Config>(() => {
+    const partialConfig = context.initialState as DeepPartial<Config>;
+    return {
+      background: { color: partialConfig.background?.color },
+      light: {
+        ambientColor: partialConfig.light?.ambientColor as [string, string] | undefined,
+        ambientIntensity: partialConfig.light?.ambientIntensity,
+        directionalColor: partialConfig.light?.directionalColor,
+        directionalIntensity: partialConfig.light?.directionalIntensity,
+      },
+      camera:
+        (partialConfig.camera as CameraState | undefined) ?? structuredClone(DEFAULT_CAMERA_STATE),
+    };
+  });
+
   // We use a layout effect to setup render handling for our panel. We also setup some topic subscriptions.
   useLayoutEffect(() => {
     // The render handler is run by the broader studio system during playback when your panel
@@ -249,6 +304,183 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
     return subscriptionList;
   }, [topics]);
 
+  const settingsActionHandler = useCallback(
+    (action: SettingsTreeAction) => {
+      setConfig((previous) => {
+        const newConfig = { ...previous };
+        const path = action.payload.path.join(".");
+        switch (path) {
+          case "background.color":
+            break;
+          case "light.ambientColor":
+            break;
+          case "light.ambientIntensity": {
+            const value = action.payload.value as number | undefined;
+            const intensity = clamp(value ?? 1, 0, 2);
+            if (renderer) {
+              renderer.hemiLight.intensity = intensity;
+              renderer.animationFrame();
+            }
+            newConfig.light.ambientIntensity = intensity;
+            break;
+          }
+          case "light.directionalColor": {
+            const value = action.payload.value as string | undefined;
+            const color = hexStringToInt(value ?? "#ffffff");
+            newConfig.light.directionalColor = value;
+            if (renderer) {
+              renderer.dirLight.color.set(color);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "light.directionalIntensity": {
+            const value = action.payload.value as number | undefined;
+            const intensity = clamp(value ?? 1, 0, 2);
+            newConfig.light.directionalIntensity = value == undefined ? undefined : intensity;
+            if (renderer) {
+              renderer.dirLight.intensity = intensity;
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.distance": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.distance = clamp(
+              value ?? DEFAULT_CAMERA_STATE.distance,
+              0,
+              Number.MAX_VALUE,
+            );
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.perspective": {
+            const value = action.payload.value as boolean | undefined;
+            newConfig.camera.perspective = value ?? DEFAULT_CAMERA_STATE.perspective;
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.phi": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.phi = clamp(
+              value ?? DEFAULT_CAMERA_STATE.phi,
+              -Math.PI / 2,
+              Math.PI / 2,
+            );
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.target": {
+            const value = action.payload.value as Vec3 | undefined;
+            newConfig.camera.target = value ?? structuredClone(DEFAULT_CAMERA_STATE.target);
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.targetOffset": {
+            const value = action.payload.value as Vec3 | undefined;
+            newConfig.camera.targetOffset =
+              value ?? structuredClone(DEFAULT_CAMERA_STATE.targetOffset);
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.targetOrientation": {
+            const value = action.payload.value as Vec4 | undefined;
+            newConfig.camera.targetOrientation =
+              value ?? structuredClone(DEFAULT_CAMERA_STATE.targetOrientation);
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.thetaOffset": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.thetaOffset = clamp(
+              value ?? DEFAULT_CAMERA_STATE.thetaOffset,
+              -Math.PI,
+              Math.PI,
+            );
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.fovy": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.fovy = clamp(value ?? DEFAULT_CAMERA_STATE.fovy, 0, 180 * DEG_TO_RAD);
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.near": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.near = clamp(
+              value ?? DEFAULT_CAMERA_STATE.near,
+              0,
+              newConfig.camera.far,
+            );
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+          case "camera.far": {
+            const value = action.payload.value as number | undefined;
+            newConfig.camera.far = clamp(
+              value ?? DEFAULT_CAMERA_STATE.far,
+              newConfig.camera.near,
+              Number.MAX_VALUE,
+            );
+            if (renderer) {
+              setCameraState(newConfig.camera);
+              renderer.setCameraState(newConfig.camera);
+              renderer.animationFrame();
+            }
+            break;
+          }
+        }
+        return newConfig;
+      });
+    },
+    [renderer],
+  );
+
+  // Build the settings side panel as needed
+  const saveState = context.saveState;
+  useEffect(() => {
+    const settings = buildSettingsTree(config);
+    context.publishPanelSettingsTree({ settings, actionHandler: settingsActionHandler });
+    saveState(config);
+  }, [config, context, saveState, settingsActionHandler]);
+
   // Notify the extension context when our subscription list changes
   useEffect(() => {
     if (!topicsToSubscribe) {
@@ -272,7 +504,7 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
   }, [colorScheme, renderer]);
 
   // Handle camera movements
-  const [cameraState, setCameraState] = useState(() => DEFAULT_CAMERA_STATE);
+  const [cameraState, setCameraState] = useState(() => config.camera);
   const [cameraStore] = useState(() => new CameraStore(setCameraState, cameraState));
 
   // Handle messages and render a frame if the camera has moved or new messages
@@ -365,4 +597,116 @@ function mergeSetInto(output: Set<string>, input: ReadonlySet<string>) {
   for (const value of input) {
     output.add(value);
   }
+}
+
+function structuredClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj)!);
+}
+
+function hexStringToInt(hex: string): number {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) {
+    throw new Error(`Invalid hex string: ${hex}`);
+  }
+  const r = parseInt(result[1]!, 16) << 16;
+  const g = parseInt(result[2]!, 16) << 8;
+  const b = parseInt(result[3]!, 16) << 0;
+  return r | g | b;
+}
+
+function buildSettingsTree(config: Config): SettingsTreeNode {
+  return {
+    children: {
+      background: {
+        label: "Background",
+        fields: {
+          color: {
+            label: "Color",
+            input: "color",
+            value: config.background.color,
+          },
+        },
+      },
+      light: {
+        label: "Light",
+        fields: {
+          ambientColor: {
+            label: "Ambient Color",
+            input: "gradient",
+            // value: config.light.ambientColor,
+          },
+          ambientIntensity: {
+            label: "Ambient Intensity",
+            input: "number",
+            value: config.light.ambientIntensity,
+          },
+          directionalColor: {
+            label: "Directional Color",
+            input: "color",
+            value: config.light.directionalColor,
+          },
+          directionalIntensity: {
+            label: "Directional Intensity",
+            input: "number",
+            value: config.light.directionalIntensity,
+          },
+        },
+      },
+      camera: {
+        label: "Camera",
+        fields: {
+          distance: {
+            label: "Distance",
+            input: "number",
+            value: config.camera.distance,
+          },
+          perspective: {
+            label: "Perspective",
+            input: "boolean",
+            value: config.camera.perspective,
+          },
+          phi: {
+            label: "Phi",
+            input: "number",
+            value: config.camera.phi,
+          },
+          // target: {
+          //   label: "Target",
+          //   input: "vector3",
+          //   value: config.camera.target,
+          // },
+          // targetOffset: {
+          //   label: "Target Offset",
+          //   input: "vector3",
+          //   value: config.camera.targetOffset,
+          // },
+          // targetOrientation: {
+          //   label: "Target Orientation",
+          //   input: "quaternion",
+          //   value: config.camera.targetOrientation,
+          // },
+          thetaOffset: {
+            label: "Theta Offset",
+            input: "number",
+            value: config.camera.thetaOffset,
+          },
+          fovy: {
+            label: "Fovy",
+            input: "number",
+            value: config.camera.fovy,
+          },
+          near: {
+            label: "Near",
+            input: "number",
+            value: config.camera.near,
+          },
+          far: {
+            label: "Far",
+            input: "number",
+            value: config.camera.far,
+          },
+        },
+      },
+    },
+  };
 }
