@@ -48,18 +48,18 @@ const StyledIconButton = muiStyled(IconButton)({
 
 export function NumberInput(
   props: {
-    increment?: number;
     iconUp?: ReactNode;
     iconDown?: ReactNode;
+    step?: number;
     value?: number;
     onChange: (value: undefined | number) => void;
   } & Omit<TextFieldProps, "onChange">,
 ): JSX.Element {
-  const { value, iconDown, iconUp, increment = 1, onChange } = props;
+  const { value, iconDown, iconUp, step = 1, onChange } = props;
 
   const [shiftPressed] = useKeyPress("Shift");
 
-  const incrementAmount = shiftPressed ? increment * 10 : increment;
+  const stepAmount = shiftPressed ? step * 10 : step;
 
   return (
     <StyledTextField
@@ -74,7 +74,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="start"
-            onClick={() => value != undefined && onChange(value - incrementAmount)}
+            onClick={() => value != undefined && onChange(value - stepAmount)}
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
           </StyledIconButton>
@@ -83,7 +83,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="end"
-            onClick={() => value != undefined && onChange(value + incrementAmount)}
+            onClick={() => value != undefined && onChange(value + stepAmount)}
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}
           </StyledIconButton>

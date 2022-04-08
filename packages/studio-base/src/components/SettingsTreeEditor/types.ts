@@ -8,7 +8,7 @@ export type SettingsTreeFieldValue =
   | { input: "color"; value?: string }
   | { input: "gradient"; value?: string }
   | { input: "messagepath"; value?: string; validTypes?: string[] }
-  | { input: "number"; value?: number }
+  | { input: "number"; value?: number; step?: number }
   | { input: "select"; value?: string; options: string[] }
   | { input: "string"; value?: string }
   | { input: "toggle"; value?: string; options: string[] };

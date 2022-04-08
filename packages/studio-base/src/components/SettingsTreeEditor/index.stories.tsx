@@ -184,6 +184,7 @@ const DefaultSettings: SettingsTreeNode = {
             point_size: {
               label: "Point Size",
               input: "number",
+              step: 0.1,
               value: 2,
             },
             point_shape: {
@@ -205,6 +206,7 @@ const DefaultSettings: SettingsTreeNode = {
             point_size: {
               label: "Point Size",
               input: "number",
+              step: 2,
               value: 2,
             },
             point_shape: {

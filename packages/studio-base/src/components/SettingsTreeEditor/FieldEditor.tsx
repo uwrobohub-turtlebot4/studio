@@ -74,6 +74,7 @@ function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unkn
           value={field.value}
           placeholder={field.placeholder}
           fullWidth
+          step={field.step}
           onChange={(value) => update(value)}
         />
       );
