@@ -183,6 +183,7 @@ function FieldEditorComponent({
 
   return (
     <>
+      <div /> {/* Spacer for left column */}
       <Stack direction="row" alignItems="center">
         <Typography
           title={field.label}

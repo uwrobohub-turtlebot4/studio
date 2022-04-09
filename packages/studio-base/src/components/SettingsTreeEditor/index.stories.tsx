@@ -277,7 +277,13 @@ export const Default = (): JSX.Element => {
   return (
     <MockPanelContextProvider>
       <PanelSetup fixture={MessagePathInputStoryFixture}>
-        <Box bgcolor="background.paper" overflow="auto">
+        <Box
+          display="flex"
+          flexDirection="column"
+          width="100%"
+          bgcolor="background.paper"
+          overflow="auto"
+        >
           <SettingsTreeEditor settings={settings} />
         </Box>
       </PanelSetup>

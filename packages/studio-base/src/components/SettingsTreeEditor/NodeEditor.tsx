@@ -84,15 +84,18 @@ const LayerOptions = muiStyled("div", {
   indent: number;
 }>(({ theme, visible, indent = 0 }) => ({
   display: "grid",
-  gridTemplateColumns: "minmax(128px, 1fr) 200px",
+  gridTemplateColumns: [
+    `minmax(0, ${
+      (indent <= 1 && theme.spacing(6)) ||
+      (indent === 2 && theme.spacing(8.5)) ||
+      (indent === 3 && theme.spacing(4)) ||
+      theme.spacing(1)
+    })`,
+    "minmax(128px, 1fr)",
+    "minmax(200px, 1fr)",
+  ].join(" "),
   gridAutoRows: 30,
-  padding: theme.spacing(0.5, 1.5, 1),
-  paddingLeft:
-    (indent === 0 && theme.spacing(7)) ||
-    (indent === 1 && theme.spacing(5 * indent + 2)) ||
-    (indent === 2 && theme.spacing(2 * indent + 2.5)) ||
-    (indent === 3 && theme.spacing(3 * indent + 1)) ||
-    theme.spacing(1),
+  padding: theme.spacing(0.5, 1.5, 1, 0.5),
   columnGap: theme.spacing(0.5),
   rowGap: theme.spacing(0.25),
   alignItems: "center",
