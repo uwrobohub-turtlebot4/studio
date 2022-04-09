@@ -4,6 +4,7 @@
 
 import { Theme, ThemeOptions } from "@mui/material/styles";
 import { CSSProperties } from "@mui/styles";
+import { inherit } from "hammerjs";
 
 type MuiLabComponents = {
   MuiFocusVisible?: {
@@ -59,6 +60,18 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
         colorDefault: {
           color: "currentColor",
           backgroundColor: theme.palette.action.hover,
+        },
+      },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        input: {
+          "&.MuiTextField-input": {
+            padding: theme.spacing(1, 1.25),
+          },
+          "&.Mui-TextField-inputSizeSmall": {
+            padding: theme.spacing(0.5, 1),
+          },
         },
       },
     },
@@ -130,6 +143,9 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
           },
           "&.Mui-disabled": {
             opacity: 0.5,
+          },
+          ".MuiAutocomplete-root &": {
+            paddingTop: 0,
           },
         },
       },

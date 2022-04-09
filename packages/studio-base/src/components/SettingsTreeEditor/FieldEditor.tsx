@@ -3,6 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Autocomplete,
   ToggleButton,
@@ -13,18 +14,18 @@ import {
   Select,
   TextField,
   IconButton,
-  Tooltip,
 } from "@mui/material";
 import { useCallback } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
+import messagePathHelp from "@foxglove/studio-base/components/MessagePathSyntax/index.help.md";
 import Stack from "@foxglove/studio-base/components/Stack";
 
-import { ColorPickerInput } from "./inputs/ColorPickerInput";
-import { ColorScalePicker } from "./inputs/ColorScalePicker";
-import { NumberInput } from "./inputs/NumberInput";
 import { SettingsTreeField } from "./types";
+import { ColorPickerInput, ColorScalePicker, NumberInput } from "./inputs";
+import { useHelpInfo } from "@foxglove/studio-base/context/HelpInfoContext";
+import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   backgroundColor: theme.palette.action.hover,
@@ -54,7 +55,36 @@ const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   },
 }));
 
+const PsuedoInputWrapper = muiStyled(Stack)(({ theme }) => {
+  const prefersDarkMode = theme.palette.mode === "dark";
+  const backgroundColor = prefersDarkMode ? "rgba(255, 255, 255, 0.09)" : "rgba(0, 0, 0, 0.06)";
+
+  return {
+    padding: theme.spacing(0.5, 1),
+    borderRadius: theme.shape.borderRadius,
+    fontSize: "0.75em",
+    backgroundColor,
+
+    input: {
+      height: "1.4375em",
+    },
+    "&:hover": {
+      backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.13)" : "rgba(0, 0, 0, 0.09)",
+      // Reset on touch devices, it doesn't add specificity
+      "@media (hover: none)": {
+        backgroundColor,
+      },
+    },
+    "&:focus-within": {
+      backgroundColor,
+    },
+  };
+});
+
 function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unknown) => void) {
+  const { openHelp } = useWorkspace();
+  const { setHelpInfo } = useHelpInfo();
+
   switch (field.input) {
     case "autocomplete":
       return (
@@ -134,11 +164,28 @@ function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unkn
     }
     case "messagepath": {
       return (
-        <MessagePathInput
-          path={field.value ?? ""}
-          onChange={(value) => update(value)}
-          validTypes={field.validTypes}
-        />
+        <PsuedoInputWrapper direction="row">
+          <MessagePathInput
+            path={field.value ?? ""}
+            onChange={(value) => update(value)}
+            validTypes={field.validTypes}
+          />
+          <IconButton
+            size="small"
+            color="secondary"
+            title="Message path syntax documentation"
+            onClick={() => {
+              setHelpInfo({ title: "MessagePathSyntax", content: messagePathHelp });
+              openHelp();
+            }}
+            sx={{
+              marginRight: -1,
+              marginY: -0.5,
+            }}
+          >
+            <InfoOutlinedIcon fontSize="inherit" />
+          </IconButton>
+        </PsuedoInputWrapper>
       );
     }
     case "select": {
@@ -195,11 +242,9 @@ function FieldEditorComponent({
           {field.label}
         </Typography>
         {field.help && (
-          <Tooltip arrow title={field.help}>
-            <IconButton size="small" color="secondary">
-              <HelpOutlineIcon fontSize="inherit" />
-            </IconButton>
-          </Tooltip>
+          <IconButton size="small" color="secondary" title={field.help}>
+            <HelpOutlineIcon fontSize="inherit" />
+          </IconButton>
         )}
       </Stack>
       <div>{buildInput(field, update)}</div>

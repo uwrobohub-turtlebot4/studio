@@ -43,6 +43,7 @@ type Config = {
 function buildSettingsTree(config: Config, topics: readonly Topic[]): SettingsTreeNode {
   return {
     fields: {
+      messagePath: { label: "Message", input: "messagepath", value: "" },
       publishRate: { label: "Publish Rate", input: "number", value: config.publishRate },
       topic: {
         label: "Topic",

@@ -54,8 +54,8 @@ const DefaultSettings: SettingsTreeNode = {
           placeholder: "https://example.com/.../model.urdf",
           value: "",
           help: `URL pointing to a Unified Robot Description Format (URDF) XML file.
-           For ROS users, we also support package:// URLs
-           (loaded from the local filesystem) in our desktop app.`,
+For ROS users, we also support package:// URLs
+(loaded from the local filesystem) in our desktop app.`,
         },
       },
     },
