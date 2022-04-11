@@ -4,7 +4,6 @@
 
 import { Theme, ThemeOptions } from "@mui/material/styles";
 import { CSSProperties } from "@mui/styles";
-import { inherit } from "hammerjs";
 
 type MuiLabComponents = {
   MuiFocusVisible?: {

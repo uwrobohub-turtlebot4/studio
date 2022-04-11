@@ -14,6 +14,7 @@ import {
   Select,
   TextField,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import { useCallback } from "react";
 import { DeepReadonly } from "ts-essentials";
@@ -21,11 +22,11 @@ import { DeepReadonly } from "ts-essentials";
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
 import messagePathHelp from "@foxglove/studio-base/components/MessagePathSyntax/index.help.md";
 import Stack from "@foxglove/studio-base/components/Stack";
-
-import { SettingsTreeField } from "./types";
-import { ColorPickerInput, ColorScalePicker, NumberInput } from "./inputs";
 import { useHelpInfo } from "@foxglove/studio-base/context/HelpInfoContext";
 import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
+
+import { ColorPickerInput, ColorScalePicker, NumberInput } from "./inputs";
+import { SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   backgroundColor: theme.palette.action.hover,
@@ -81,7 +82,14 @@ const PsuedoInputWrapper = muiStyled(Stack)(({ theme }) => {
   };
 });
 
-function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unknown) => void) {
+function FieldInput({
+  field,
+  update,
+}: {
+  field: DeepReadonly<SettingsTreeField>;
+  update: (value: unknown) => void;
+}): JSX.Element {
+  const theme = useTheme();
   const { openHelp } = useWorkspace();
   const { setHelpInfo } = useHelpInfo();
 
@@ -178,9 +186,10 @@ function buildInput(field: DeepReadonly<SettingsTreeField>, update: (value: unkn
               setHelpInfo({ title: "MessagePathSyntax", content: messagePathHelp });
               openHelp();
             }}
-            sx={{
-              marginRight: -1,
-              marginY: -0.5,
+            style={{
+              marginRight: theme.spacing(-1),
+              marginBottom: theme.spacing(-0.5),
+              marginTop: theme.spacing(-0.5),
             }}
           >
             <InfoOutlinedIcon fontSize="inherit" />
@@ -247,7 +256,9 @@ function FieldEditorComponent({
           </IconButton>
         )}
       </Stack>
-      <div>{buildInput(field, update)}</div>
+      <div>
+        <FieldInput field={field} update={update} />
+      </div>
     </>
   );
 }
