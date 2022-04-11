@@ -347,14 +347,14 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   useMessagePipeline(messagePipelineSelector);
 
-  const { publishPanelSettingsTree } = useContext(PanelSettingsEditorContext);
+  const { updatePanelSettingsTree } = useContext(PanelSettingsEditorContext);
   const { id: panelLayoutId } = usePanelContext();
 
-  const publishSettings = useCallback(
+  const updateSettings = useCallback(
     (settings: SettingsTree) => {
-      publishPanelSettingsTree(panelLayoutId, settings);
+      updatePanelSettingsTree(panelLayoutId, settings);
     },
-    [panelLayoutId, publishPanelSettingsTree],
+    [panelLayoutId, updatePanelSettingsTree],
   );
 
   type PartialPanelExtensionContext = Omit<PanelExtensionContext, "panelElement">;
@@ -376,7 +376,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
     return {
       // This is here temporarily until the new panel settings API is ready. Do not use.
-      __publishPanelSettingsTree: publishSettings,
+      __updatePanelSettingsTree: updateSettings,
 
       initialState: configRef.current,
 
@@ -492,7 +492,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     clearHoverValue,
     openSiblingPanel,
     panelId,
-    publishSettings,
+    updateSettings,
     requestBackfill,
     saveConfig,
     seekPlayback,

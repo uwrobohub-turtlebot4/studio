@@ -4,7 +4,7 @@
 
 import { Stack, Typography } from "@mui/material";
 import { set } from "lodash";
-import { ReactNode, useCallback, useContext, useEffect, useLayoutEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { DeepPartial } from "ts-essentials";
 
 import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
@@ -13,7 +13,6 @@ import {
   SettingsTreeAction,
   SettingsTreeNode,
 } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
-import { PanelSettingsEditorContext } from "@foxglove/studio-base/context/PanelSettingsEditorContext";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
@@ -132,8 +131,6 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
   const [currentAction, setCurrentAction] = useState<DirectionalPadAction | undefined>();
   const [topics, setTopics] = useState<readonly Topic[]>([]);
 
-  const { publishPanelSettingsTree } = useContext(PanelSettingsEditorContext);
-
   // resolve an initial config which may have some missing fields into a full config
   const [config, setConfig] = useState<Config>(() => {
     const partialConfig = context.initialState as DeepPartial<Config>;
@@ -189,7 +186,7 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
       actionHandler: settingsActionHandler,
     });
     saveState(config);
-  }, [config, context, publishPanelSettingsTree, saveState, settingsActionHandler, topics]);
+  }, [config, context, saveState, settingsActionHandler, topics]);
 
   // advertise topic
   const { topic: currentTopic } = config;

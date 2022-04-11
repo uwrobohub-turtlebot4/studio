@@ -9,12 +9,12 @@ import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEdito
 
 export type PanelSettingsEditorContextType = {
   panelSettingsTrees: DeepReadonly<Record<string, SettingsTree>>;
-  publishPanelSettingsTree: (panelId: string, settings: undefined | SettingsTree) => void;
+  updatePanelSettingsTree: (panelId: string, settings: undefined | SettingsTree) => void;
 };
 
 export const PanelSettingsEditorContext = createContext<PanelSettingsEditorContextType>({
   panelSettingsTrees: {},
-  publishPanelSettingsTree: () => {},
+  updatePanelSettingsTree: () => {},
 });
 
 export function PanelSettingsEditorContextProvider({
@@ -24,7 +24,7 @@ export function PanelSettingsEditorContextProvider({
 }): JSX.Element {
   const [panelSettingsTrees, setPanelSettingsTrees] = useState<Record<string, SettingsTree>>({});
 
-  const publishPanelSettingsTree = useCallback(
+  const updatePanelSettingsTree = useCallback(
     (panelId: string, settings: undefined | SettingsTree) => {
       if (settings) {
         setPanelSettingsTrees((previous) => ({ ...previous, [panelId]: settings }));
@@ -42,9 +42,9 @@ export function PanelSettingsEditorContextProvider({
   const contextValue = useMemo(
     () => ({
       panelSettingsTrees,
-      publishPanelSettingsTree,
+      updatePanelSettingsTree,
     }),
-    [panelSettingsTrees, publishPanelSettingsTree],
+    [panelSettingsTrees, updatePanelSettingsTree],
   );
 
   return (
