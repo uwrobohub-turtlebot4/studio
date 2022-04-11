@@ -86,12 +86,7 @@ const LayerOptions = muiStyled("div", {
 }>(({ theme, visible, indent = 0 }) => ({
   display: "grid",
   gridTemplateColumns: [
-    `minmax(0, ${
-      (indent <= 1 && theme.spacing(6)) ||
-      (indent === 2 && theme.spacing(8.5)) ||
-      (indent === 3 && theme.spacing(4)) ||
-      theme.spacing(1)
-    })`,
+    `minmax(0, ${(indent === 3 && theme.spacing(9)) || theme.spacing(6)})`,
     "minmax(128px, 1fr)",
     "minmax(200px, 1fr)",
   ].join(" "),
