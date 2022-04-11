@@ -28,9 +28,22 @@ export type SettingsTreeNode = {
   children?: SettingsTreeChildren;
 };
 
+/**
+ * Distributes Pick<T, K> across all members of a union, used for extracting structured
+ * subtypes.
+ */
+type DistributivePick<T, K extends keyof T> = T extends unknown ? Pick<T, K> : never;
+
+/**
+ * Represents actions that can be dispatched to source of the SettingsTree to implement
+ * edits and updates.
+ */
 export type SettingsTreeAction = {
   action: "update";
-  payload: { path: readonly string[]; value: unknown };
+  payload: { path: readonly string[] } & DistributivePick<
+    SettingsTreeFieldValue,
+    "input" | "value"
+  >;
 };
 
 /**

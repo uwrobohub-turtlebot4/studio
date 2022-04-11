@@ -5,7 +5,7 @@
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
 import { AppBar, IconButton, TextField, styled as muiStyled, List } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -29,13 +29,6 @@ export default function SettingsTreeEditor({
 }): JSX.Element {
   const { actionHandler } = settings;
   const [filterText, setFilterText] = useState<string>("");
-
-  const updater = useCallback(
-    (path: readonly string[], value: unknown) => {
-      actionHandler({ action: "update", payload: { path, value } });
-    },
-    [actionHandler],
-  );
 
   return (
     <Stack fullHeight>
@@ -62,7 +55,7 @@ export default function SettingsTreeEditor({
         />
       </StyledAppBar>
       <List dense disablePadding>
-        <NodeEditor path={ROOT_PATH} settings={settings.settings} updateSettings={updater} />
+        <NodeEditor path={ROOT_PATH} settings={settings.settings} actionHandler={actionHandler} />
       </List>
     </Stack>
   );

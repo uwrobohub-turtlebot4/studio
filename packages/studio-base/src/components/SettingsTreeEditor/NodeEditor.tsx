@@ -24,9 +24,10 @@ import Stack from "@foxglove/studio-base/components/Stack";
 
 import { FieldEditor } from "./FieldEditor";
 import { VisibilityToggle } from "./VisibilityToggle";
-import { SettingsTreeNode } from "./types";
+import { SettingsTreeAction, SettingsTreeNode } from "./types";
 
 export type NodeEditorProps = {
+  actionHandler: (action: SettingsTreeAction) => void;
   defaultOpen?: boolean;
   disableIcon?: boolean;
   divider?: ListItemProps["divider"];
@@ -104,13 +105,13 @@ const LayerOptions = muiStyled("div", {
 
 function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
   const {
-    icon,
+    actionHandler,
     defaultOpen = true,
     disableIcon = false,
+    icon,
     onClick = () => {},
-    settings = {},
     secondaryAction,
-    updateSettings = () => {},
+    settings = {},
   } = props;
   const [open, setOpen] = useState<boolean>(defaultOpen);
   const [visible, setVisiblity] = useState<boolean>(true);
@@ -130,19 +131,17 @@ function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
 
   const fieldEditors = Object.entries(fields ?? {}).map(([key, field]) => {
     const stablePath = (stablePaths[key] ??= [...props.path, key]);
-    return (
-      <FieldEditor key={key} field={field} path={stablePath} updateSettings={updateSettings} />
-    );
+    return <FieldEditor key={key} field={field} path={stablePath} actionHandler={actionHandler} />;
   });
 
   const childNodes = Object.entries(children ?? {}).map(([key, child]) => {
     const stablePath = (stablePaths[key] ??= [...props.path, key]);
     return (
       <NodeEditor
+        actionHandler={actionHandler}
         disableIcon={props.path.length > 0}
         key={key}
         settings={child}
-        updateSettings={updateSettings}
         path={stablePath}
       />
     );

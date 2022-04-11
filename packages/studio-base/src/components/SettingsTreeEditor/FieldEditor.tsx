@@ -16,7 +16,6 @@ import {
   IconButton,
   useTheme,
 } from "@mui/material";
-import { useCallback } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
@@ -26,7 +25,7 @@ import { useHelpInfo } from "@foxglove/studio-base/context/HelpInfoContext";
 import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
 
 import { ColorPickerInput, ColorScalePicker, NumberInput } from "./inputs";
-import { SettingsTreeField } from "./types";
+import { SettingsTreeAction, SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   backgroundColor: theme.palette.action.hover,
@@ -83,11 +82,13 @@ const PsuedoInputWrapper = muiStyled(Stack)(({ theme }) => {
 });
 
 function FieldInput({
+  actionHandler,
   field,
-  update,
+  path,
 }: {
+  actionHandler: (action: SettingsTreeAction) => void;
   field: DeepReadonly<SettingsTreeField>;
-  update: (value: unknown) => void;
+  path: readonly string[];
 }): JSX.Element {
   const theme = useTheme();
   const { openHelp } = useWorkspace();
@@ -100,8 +101,15 @@ function FieldInput({
           freeSolo={true}
           value={field.value}
           renderInput={(params) => <TextField {...params} variant="filled" size="small" />}
-          onInputChange={(_event, value) => update(value)}
-          onChange={(_event, value) => update(value)}
+          onInputChange={(_event, value) =>
+            actionHandler({ action: "update", payload: { path, input: "autocomplete", value } })
+          }
+          onChange={(_event, value) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "autocomplete", value: value ?? undefined },
+            })
+          }
           options={field.items}
         />
       );
@@ -114,7 +122,9 @@ function FieldInput({
           placeholder={field.placeholder}
           fullWidth
           step={field.step}
-          onChange={(value) => update(value)}
+          onChange={(value) =>
+            actionHandler({ action: "update", payload: { path, input: "number", value } })
+          }
         />
       );
     case "toggle":
@@ -124,7 +134,9 @@ function FieldInput({
           value={field.value}
           exclusive
           size="small"
-          onChange={(_event, value) => update(value)}
+          onChange={(_event, value) =>
+            actionHandler({ action: "update", payload: { path, input: "toggle", value } })
+          }
         >
           {field.options.map((opt) => (
             <ToggleButton key={opt} value={opt}>
@@ -141,7 +153,12 @@ function FieldInput({
           fullWidth
           value={field.value}
           placeholder={field.placeholder}
-          onChange={(event) => update(event.target.value)}
+          onChange={(event) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "string", value: event.target.value },
+            })
+          }
         />
       );
     }
@@ -152,7 +169,12 @@ function FieldInput({
           value={field.value}
           exclusive
           size="small"
-          onChange={(_event, value) => update(value)}
+          onChange={(_event, value) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "boolean", value },
+            })
+          }
         >
           <ToggleButton value={true}>On</ToggleButton>
           <ToggleButton value={false}>Off</ToggleButton>
@@ -166,7 +188,12 @@ function FieldInput({
           size="small"
           variant="filled"
           fullWidth
-          onChange={(value) => update(value)}
+          onChange={(value) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "color", value },
+            })
+          }
         />
       );
     }
@@ -175,7 +202,12 @@ function FieldInput({
         <PsuedoInputWrapper direction="row">
           <MessagePathInput
             path={field.value ?? ""}
-            onChange={(value) => update(value)}
+            onChange={(value) =>
+              actionHandler({
+                action: "update",
+                payload: { path, input: "messagepath", value },
+              })
+            }
             validTypes={field.validTypes}
           />
           <IconButton
@@ -204,7 +236,12 @@ function FieldInput({
           fullWidth
           variant="filled"
           value={field.value}
-          onChange={(event) => update(event.target.value)}
+          onChange={(event) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "select", value: event.target.value },
+            })
+          }
           MenuProps={{ MenuListProps: { dense: true } }}
         >
           {field.options.map((opt) => (
@@ -222,21 +259,14 @@ function FieldInput({
 }
 
 function FieldEditorComponent({
+  actionHandler,
   field,
   path,
-  updateSettings,
 }: {
+  actionHandler: (action: SettingsTreeAction) => void;
   field: DeepReadonly<SettingsTreeField>;
   path: readonly string[];
-  updateSettings: (path: readonly string[], value: unknown) => void;
 }): JSX.Element {
-  const update = useCallback(
-    (value: unknown) => {
-      updateSettings(path, value);
-    },
-    [path, updateSettings],
-  );
-
   return (
     <>
       <div /> {/* Spacer for left column */}
@@ -257,7 +287,7 @@ function FieldEditorComponent({
         )}
       </Stack>
       <div>
-        <FieldInput field={field} update={update} />
+        <FieldInput actionHandler={actionHandler} field={field} path={path} />
       </div>
     </>
   );
