@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import ClearIcon from "@mui/icons-material/Clear";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
@@ -10,11 +11,12 @@ import {
   ToggleButtonGroup,
   Typography,
   styled as muiStyled,
+  List,
   MenuItem,
   Select,
   TextField,
   IconButton,
-  useTheme,
+  ListProps,
 } from "@mui/material";
 import { DeepReadonly } from "ts-essentials";
 
@@ -32,15 +34,16 @@ const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   gap: theme.spacing(0.25),
 
   "& .MuiToggleButtonGroup-grouped": {
-    margin: theme.spacing(0.25),
+    margin: theme.spacing(0.55),
     borderRadius: theme.shape.borderRadius,
     paddingTop: 0,
     paddingBottom: 0,
     borderColor: "transparent",
+    lineHeight: 1.75,
 
     "&.Mui-selected": {
       background: theme.palette.background.paper,
-      borderColor: theme.palette.action.focus,
+      borderColor: "transparent",
 
       "&:hover": {
         borderColor: theme.palette.action.active,
@@ -60,7 +63,7 @@ const PsuedoInputWrapper = muiStyled(Stack)(({ theme }) => {
   const backgroundColor = prefersDarkMode ? "rgba(255, 255, 255, 0.09)" : "rgba(0, 0, 0, 0.06)";
 
   return {
-    padding: theme.spacing(0.5, 1),
+    padding: theme.spacing(0.75, 1),
     borderRadius: theme.shape.borderRadius,
     fontSize: "0.75em",
     backgroundColor,
@@ -81,6 +84,15 @@ const PsuedoInputWrapper = muiStyled(Stack)(({ theme }) => {
   };
 });
 
+const StyledIconButton = muiStyled(IconButton)(({ theme, edge }) => ({
+  marginTop: theme.spacing(-0.5),
+  marginBottom: theme.spacing(-0.5),
+
+  ...(edge === "end" && {
+    marginRight: theme.spacing(-0.75),
+  }),
+}));
+
 function FieldInput({
   actionHandler,
   field,
@@ -90,7 +102,6 @@ function FieldInput({
   field: DeepReadonly<SettingsTreeField>;
   path: readonly string[];
 }): JSX.Element {
-  const theme = useTheme();
   const { openHelp } = useWorkspace();
   const { setHelpInfo } = useHelpInfo();
 
@@ -98,8 +109,18 @@ function FieldInput({
     case "autocomplete":
       return (
         <Autocomplete
+          size="small"
           freeSolo={true}
           value={field.value}
+          ListboxComponent={List}
+          ListboxProps={{ dense: true } as Partial<ListProps>}
+          renderOption={(props, option, { selected }) => (
+            <MenuItem selected={selected} {...props}>
+              {option}
+            </MenuItem>
+          )}
+          componentsProps={{ clearIndicator: { size: "small" } }}
+          clearIcon={<ClearIcon fontSize="small" />}
           renderInput={(params) => <TextField {...params} variant="filled" size="small" />}
           onInputChange={(_event, value) =>
             actionHandler({ action: "update", payload: { path, input: "autocomplete", value } })
@@ -210,7 +231,7 @@ function FieldInput({
             }
             validTypes={field.validTypes}
           />
-          <IconButton
+          <StyledIconButton
             size="small"
             color="secondary"
             title="Message path syntax documentation"
@@ -218,14 +239,10 @@ function FieldInput({
               setHelpInfo({ title: "MessagePathSyntax", content: messagePathHelp });
               openHelp();
             }}
-            style={{
-              marginRight: theme.spacing(-1),
-              marginBottom: theme.spacing(-0.5),
-              marginTop: theme.spacing(-0.5),
-            }}
+            edge="end"
           >
             <InfoOutlinedIcon fontSize="inherit" />
-          </IconButton>
+          </StyledIconButton>
         </PsuedoInputWrapper>
       );
     }

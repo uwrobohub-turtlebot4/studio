@@ -12,7 +12,8 @@ import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const StyledTextField = muiStyled(TextField)({
   ".MuiInputBase-formControl.MuiInputBase-root": {
-    padding: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   ".MuiInputBase-input": {
     textAlign: "center",
@@ -35,12 +36,12 @@ const StyledTextField = muiStyled(TextField)({
 
 const StyledIconButton = muiStyled(IconButton)({
   "&.MuiIconButton-edgeStart": {
-    margin: 0,
+    // margin: 0,
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
   "&.MuiIconButton-edgeEnd": {
-    margin: 0,
+    // margin: 0,
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   },

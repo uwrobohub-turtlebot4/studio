@@ -64,13 +64,23 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
     },
     MuiAutocomplete: {
       styleOverrides: {
-        input: {
-          "&.MuiTextField-input": {
+        root: {
+          ".MuiInputBase-root. .MuiAutocomplete-input.MuiInputBase-input": {
             padding: theme.spacing(1, 1.25),
           },
-          "&.Mui-TextField-inputSizeSmall": {
-            padding: theme.spacing(0.5, 1),
+          ".MuiInputBase-root.MuiInputBase-sizeSmall": {
+            paddingBottom: 0,
+
+            ".MuiAutocomplete-input.MuiInputBase-inputSizeSmall": {
+              padding: theme.spacing(0.75, 1),
+            },
           },
+          ".MuiInputBase-root .MuiAutocomplete-endAdornment": {
+            marginRight: theme.spacing(-0.5),
+          },
+        },
+        endAdornment: {
+          top: `calc(50% - ${theme.spacing(1.5)})`,
         },
       },
     },
@@ -132,7 +142,7 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
           padding: theme.spacing(1, 1.25),
         },
         inputSizeSmall: {
-          padding: theme.spacing(0.5, 1),
+          padding: theme.spacing(0.75, 1),
         },
         root: {
           borderRadius: theme.shape.borderRadius,
@@ -181,7 +191,7 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
           padding: theme.spacing(1, 1.25),
         },
         inputSizeSmall: {
-          padding: theme.spacing(0.5, 1),
+          padding: theme.spacing(0.75, 1),
         },
       },
     },
@@ -292,7 +302,21 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
           padding: theme.spacing(1, 1.25),
         },
         inputSizeSmall: {
-          padding: theme.spacing(0.5, 1),
+          padding: theme.spacing(0.75, 1),
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        select: {
+          "&.MuiInputBase-input": {
+            paddingTop: theme.spacing(1),
+            paddingBottom: theme.spacing(1),
+          },
+          "&.MuiInputBase-inputSizeSmall": {
+            paddingTop: theme.spacing(0.625),
+            paddingBottom: theme.spacing(0.625),
+          },
         },
       },
     },
