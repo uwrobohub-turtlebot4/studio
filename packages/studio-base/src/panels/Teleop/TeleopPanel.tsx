@@ -181,7 +181,7 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
   useEffect(() => {
     const tree = buildSettingsTree(config, topics);
     // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
-    (context as unknown as any).__publishPanelSettingsTree({
+    (context as unknown as any).__updatePanelSettingsTree({
       settings: tree,
       actionHandler: settingsActionHandler,
     });

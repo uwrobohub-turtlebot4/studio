@@ -11,14 +11,11 @@ import { DeepPartial } from "ts-essentials";
 import Logger from "@foxglove/log";
 import { CameraListener, CameraState, CameraStore } from "@foxglove/regl-worldview";
 import { toNanoSec } from "@foxglove/rostime";
+import { PanelExtensionContext, RenderState, Topic, MessageEvent } from "@foxglove/studio";
 import {
-  PanelExtensionContext,
-  RenderState,
-  Topic,
-  MessageEvent,
   SettingsTreeAction,
   SettingsTreeNode,
-} from "@foxglove/studio";
+} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import useCleanup from "@foxglove/studio-base/hooks/useCleanup";
 
 import { DebugGui } from "./DebugGui";
@@ -477,7 +474,11 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
   const saveState = context.saveState;
   useEffect(() => {
     const settings = buildSettingsTree(config);
-    context.publishPanelSettingsTree({ settings, actionHandler: settingsActionHandler });
+    // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
+    (context as unknown as any).__updatePanelSettingsTree({
+      settings,
+      actionHandler: settingsActionHandler,
+    });
     saveState(config);
   }, [config, context, saveState, settingsActionHandler]);
 
