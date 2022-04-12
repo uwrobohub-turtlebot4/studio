@@ -11,6 +11,7 @@ export type SettingsTreeFieldValue =
   | { input: "number"; value?: number; step?: number }
   | { input: "select"; value?: string; options: string[] }
   | { input: "string"; value?: string }
+  | { input: "vect3"; value?: [number, number, number] }
   | { input: "toggle"; value?: string; options: string[] };
 
 export type SettingsTreeField = SettingsTreeFieldValue & {

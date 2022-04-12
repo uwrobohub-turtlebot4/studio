@@ -232,6 +232,15 @@ For ROS users, we also support package:// URLs
         shaft_width: { label: "Shaft width", value: 1.5, input: "number" },
         head_length: { label: "Head length", value: 2, input: "number" },
         head_width: { label: "Head width", value: 2, input: "number" },
+        position: {
+          label: "Position",
+          input: "vect3",
+          help: "The position of the pose marker in the map frame.",
+        },
+        // orientation: {
+        //   label: "Orientation",
+        //   input: "quaternion",
+        // },
       },
     },
   },

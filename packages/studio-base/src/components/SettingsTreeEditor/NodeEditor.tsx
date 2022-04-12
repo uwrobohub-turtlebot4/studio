@@ -48,7 +48,7 @@ const StyledListItem = muiStyled(ListItem, {
 }>(({ theme, visible, indent = 0 }) => ({
   ".MuiListItemButton-root": {
     paddingLeft: indent === 3 ? theme.spacing(3.5) : theme.spacing(0.5),
-    gap: theme.spacing(1),
+    gap: theme.spacing(1.25),
   },
   ".MuiListItemIcon-root": {
     minWidth: theme.spacing(5),
@@ -86,14 +86,13 @@ const LayerOptions = muiStyled("div", {
 }>(({ theme, visible, indent = 0 }) => ({
   display: "grid",
   gridTemplateColumns: [
-    `minmax(0, ${(indent === 3 && theme.spacing(9)) || theme.spacing(6)})`,
+    `minmax(0, ${(indent === 3 && theme.spacing(8)) || theme.spacing(6)})`,
     "minmax(128px, 1fr)",
     "minmax(200px, 1fr)",
   ].join(" "),
   // gridAutoRows: 30,
   padding: theme.spacing(0.5, 1.5, 1, 0.5),
-  columnGap: theme.spacing(0.5),
-  rowGap: theme.spacing(0.25),
+  gap: theme.spacing(0.5),
   alignItems: "center",
   opacity: visible ? 1 : 0.6,
 }));

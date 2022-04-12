@@ -17,6 +17,7 @@ import {
   TextField,
   IconButton,
   ListProps,
+  Box,
 } from "@mui/material";
 import { DeepReadonly } from "ts-essentials";
 
@@ -26,7 +27,7 @@ import Stack from "@foxglove/studio-base/components/Stack";
 import { useHelpInfo } from "@foxglove/studio-base/context/HelpInfoContext";
 import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
 
-import { ColorPickerInput, ColorScalePicker, NumberInput } from "./inputs";
+import { ColorPickerInput, ColorScalePicker, NumberInput, Vect3Input } from "./inputs";
 import { SettingsTreeAction, SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
@@ -91,6 +92,18 @@ const StyledIconButton = muiStyled(IconButton)(({ theme, edge }) => ({
   ...(edge === "end" && {
     marginRight: theme.spacing(-0.75),
   }),
+}));
+
+const SecondaryLabel = muiStyled("div")(({ theme }) => ({
+  whiteSpace: "nowrap",
+  display: "flex",
+  flex: "auto",
+  ...theme.typography.subtitle2,
+  color: theme.palette.text.secondary,
+  alignItems: "center",
+  justifyContent: "center",
+  height: 29,
+  width: 30,
 }));
 
 function FieldInput({
@@ -272,6 +285,9 @@ function FieldInput({
     case "gradient": {
       return <ColorScalePicker color="inherit" size="small" />;
     }
+    case "vect3": {
+      return <Vect3Input variant="filled" size="small" />;
+    }
   }
 }
 
@@ -287,20 +303,34 @@ function FieldEditorComponent({
   return (
     <>
       <div /> {/* Spacer for left column */}
-      <Stack direction="row" alignItems="center">
+      <Stack
+        direction="row"
+        alignItems={field.input === "vect3" ? "flex-start" : "center"}
+        fullHeight
+      >
         <Typography
           title={field.label}
           variant="subtitle2"
           color="text.secondary"
           noWrap
           flex="auto"
+          lineHeight={2.5}
         >
           {field.label}
         </Typography>
         {field.help && (
-          <IconButton size="small" color="secondary" title={field.help}>
-            <HelpOutlineIcon fontSize="inherit" />
-          </IconButton>
+          <Box marginTop={field.input === "vect3" ? 0.25 : undefined}>
+            <IconButton size="small" color="secondary" title={field.help}>
+              <HelpOutlineIcon fontSize="inherit" />
+            </IconButton>
+          </Box>
+        )}
+        {field.input === "vect3" && (
+          <Stack gap={0.5}>
+            <SecondaryLabel>X</SecondaryLabel>
+            <SecondaryLabel>Y</SecondaryLabel>
+            <SecondaryLabel>Z</SecondaryLabel>
+          </Stack>
         )}
       </Stack>
       <div>
