@@ -34,18 +34,18 @@ const StyledTextField = muiStyled(TextField)({
   },
 });
 
-const StyledIconButton = muiStyled(IconButton)({
+const StyledIconButton = muiStyled(IconButton)(({ theme }) => ({
   "&.MuiIconButton-edgeStart": {
-    // margin: 0,
+    marginLeft: theme.spacing(-0.75),
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
   "&.MuiIconButton-edgeEnd": {
-    // margin: 0,
+    marginRight: theme.spacing(-0.75),
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   },
-});
+}));
 
 export function NumberInput(
   props: {
