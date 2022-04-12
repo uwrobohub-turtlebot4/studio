@@ -8,12 +8,11 @@ import { ReactNode, useCallback, useEffect, useLayoutEffect, useState } from "re
 import { DeepPartial } from "ts-essentials";
 
 import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
+import { PanelExtensionContext, Topic } from "@foxglove/studio";
 import {
-  PanelExtensionContext,
   SettingsTreeAction,
   SettingsTreeNode,
-  Topic,
-} from "@foxglove/studio";
+} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
@@ -43,6 +42,7 @@ type Config = {
 function buildSettingsTree(config: Config, topics: readonly Topic[]): SettingsTreeNode {
   return {
     fields: {
+      messagePath: { label: "Message", input: "messagepath", value: "" },
       publishRate: { label: "Publish Rate", input: "number", value: config.publishRate },
       topic: {
         label: "Topic",
@@ -176,11 +176,15 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
         setColorScheme(renderState.colorScheme);
       }
     };
-  }, [context, settingsActionHandler]);
+  }, [context]);
 
   useEffect(() => {
     const tree = buildSettingsTree(config, topics);
-    context.publishPanelSettingsTree({ settings: tree, actionHandler: settingsActionHandler });
+    // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
+    (context as unknown as any).__publishPanelSettingsTree({
+      settings: tree,
+      actionHandler: settingsActionHandler,
+    });
     saveState(config);
   }, [config, context, saveState, settingsActionHandler, topics]);
 

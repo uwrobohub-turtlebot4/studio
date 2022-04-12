@@ -6,11 +6,12 @@ import { Box } from "@mui/material";
 import produce from "immer";
 import { useCallback, useMemo } from "react";
 
-import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "@foxglove/studio";
 import { MessagePathInputStoryFixture } from "@foxglove/studio-base/components/MessagePathSyntax/fixture";
 import MockPanelContextProvider from "@foxglove/studio-base/components/MockPanelContextProvider";
 import SettingsTreeEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
 import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
+
+import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "./types";
 
 export default {
   title: "components/SettingsTreeEditor",
@@ -53,8 +54,8 @@ const DefaultSettings: SettingsTreeNode = {
           placeholder: "https://example.com/.../model.urdf",
           value: "",
           help: `URL pointing to a Unified Robot Description Format (URDF) XML file.
-           For ROS users, we also support package:// URLs
-           (loaded from the local filesystem) in our desktop app.`,
+For ROS users, we also support package:// URLs
+(loaded from the local filesystem) in our desktop app.`,
         },
       },
     },
@@ -104,7 +105,7 @@ const DefaultSettings: SettingsTreeNode = {
         },
         size: {
           label: "Size",
-          value: 10,
+          value: undefined,
           input: "number",
         },
         subdivision: {
@@ -183,6 +184,7 @@ const DefaultSettings: SettingsTreeNode = {
             point_size: {
               label: "Point Size",
               input: "number",
+              step: 0.1,
               value: 2,
             },
             point_shape: {
@@ -204,6 +206,7 @@ const DefaultSettings: SettingsTreeNode = {
             point_size: {
               label: "Point Size",
               input: "number",
+              step: 2,
               value: 2,
             },
             point_shape: {
@@ -236,16 +239,17 @@ const DefaultSettings: SettingsTreeNode = {
 
 function updateSettingsTreeNode(
   previous: SettingsTreeNode,
-  path: string[],
+  path: readonly string[],
   value: unknown,
 ): SettingsTreeNode {
+  const workingPath = [...path];
   return produce(previous, (draft) => {
     let node: undefined | Partial<SettingsTreeNode> = draft;
-    while (node != undefined && path.length > 1) {
-      const key = path.shift()!;
+    while (node != undefined && workingPath.length > 1) {
+      const key = workingPath.shift()!;
       node = node.children?.[key];
     }
-    const key = path.shift()!;
+    const key = workingPath.shift()!;
     const field = node?.fields?.[key];
     if (field != undefined) {
       field.value = value as SettingsTreeFieldValue["value"];
@@ -273,7 +277,13 @@ export const Default = (): JSX.Element => {
   return (
     <MockPanelContextProvider>
       <PanelSetup fixture={MessagePathInputStoryFixture}>
-        <Box bgcolor="background.paper" overflow="auto">
+        <Box
+          display="flex"
+          flexDirection="column"
+          width="100%"
+          bgcolor="background.paper"
+          overflow="auto"
+        >
           <SettingsTreeEditor settings={settings} />
         </Box>
       </PanelSetup>

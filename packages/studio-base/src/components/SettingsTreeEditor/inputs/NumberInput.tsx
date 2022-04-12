@@ -12,7 +12,8 @@ import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const StyledTextField = muiStyled(TextField)({
   ".MuiInputBase-formControl.MuiInputBase-root": {
-    padding: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   ".MuiInputBase-input": {
     textAlign: "center",
@@ -33,46 +34,48 @@ const StyledTextField = muiStyled(TextField)({
   },
 });
 
-const StyledIconButton = muiStyled(IconButton)({
+const StyledIconButton = muiStyled(IconButton)(({ theme }) => ({
   "&.MuiIconButton-edgeStart": {
-    margin: 0,
+    marginLeft: theme.spacing(-0.75),
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
   "&.MuiIconButton-edgeEnd": {
-    margin: 0,
+    marginRight: theme.spacing(-0.75),
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   },
-});
+}));
 
 export function NumberInput(
   props: {
-    increment?: number;
     iconUp?: ReactNode;
     iconDown?: ReactNode;
-    value: number;
-    onChange: (value: number) => void;
+    step?: number;
+    value?: number;
+    onChange: (value: undefined | number) => void;
   } & Omit<TextFieldProps, "onChange">,
 ): JSX.Element {
-  const { value, iconDown, iconUp, increment = 1, onChange } = props;
+  const { value, iconDown, iconUp, step = 1, onChange } = props;
 
   const [shiftPressed] = useKeyPress("Shift");
 
-  const incrementAmount = shiftPressed ? increment * 10 : increment;
+  const stepAmount = shiftPressed ? step * 10 : step;
 
   return (
     <StyledTextField
       {...props}
       value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
+      onChange={(event) =>
+        onChange(event.target.value.length > 0 ? Number(event.target.value) : undefined)
+      }
       type="number"
       InputProps={{
         startAdornment: (
           <StyledIconButton
             size="small"
             edge="start"
-            onClick={() => onChange(value - incrementAmount)}
+            onClick={() => value != undefined && onChange(value - stepAmount)}
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
           </StyledIconButton>
@@ -81,7 +84,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="end"
-            onClick={() => onChange(value + incrementAmount)}
+            onClick={() => value != undefined && onChange(value + stepAmount)}
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}
           </StyledIconButton>

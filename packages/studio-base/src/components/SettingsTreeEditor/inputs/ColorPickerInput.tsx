@@ -2,7 +2,8 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { TextField, ButtonBase, styled as muiStyled, TextFieldProps } from "@mui/material";
+import { ColorPicker } from "@fluentui/react";
+import { TextField, styled as muiStyled, TextFieldProps } from "@mui/material";
 import { useState } from "react";
 
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
@@ -21,43 +22,60 @@ const ColorSwatch = muiStyled("div", {
   shouldForwardProp: (prop) => prop !== "color",
 })<{ color: string }>(({ theme, color }) => ({
   backgroundColor: color,
-  height: theme.spacing(2),
-  width: theme.spacing(2),
+  height: theme.spacing(2.5),
+  width: theme.spacing(3),
   margin: theme.spacing(0.625),
   borderRadius: 1,
   border: `1px solid ${theme.palette.getContrastText(color)}`,
 }));
 
 type ColorPickerInputProps = {
-  defaultValue?: string;
+  value: undefined | string;
+  onChange: (value: undefined | string) => void;
   swatchOrientation?: "start" | "end";
-} & TextFieldProps;
+} & Omit<TextFieldProps, "onChange">;
 
 export function ColorPickerInput(props: ColorPickerInputProps): JSX.Element {
-  const { defaultValue, swatchOrientation = "start" } = props;
-  const [color, setColor] = useState<string>(defaultValue ?? "#000000");
+  const { onChange, swatchOrientation = "start", value } = props;
+  const [showPicker, setShowPicker] = useState(false);
 
-  // TODOS:
-  // - Add a color picker component
-  // - Make its safe to type invalid strings into the field
+  const isValidColor = Boolean(value?.match(/^#[0-9a-fA-F]{6}$/i));
+  const swatchColor = isValidColor && value != undefined ? value : "#00000044";
+
+  const togglePicker = () => setShowPicker(!showPicker);
 
   return (
-    <StyledTextField
-      {...props}
-      defaultValue={defaultValue}
-      onChange={(event) => setColor(event.target.value)}
-      InputProps={{
-        startAdornment: swatchOrientation === "start" && (
-          <ButtonBase>
-            <ColorSwatch color={color} />
-          </ButtonBase>
-        ),
-        endAdornment: swatchOrientation === "end" && (
-          <ButtonBase>
-            <ColorSwatch color={color} />
-          </ButtonBase>
-        ),
-      }}
-    />
+    <div style={{ position: "relative" }}>
+      <StyledTextField
+        {...props}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        InputProps={{
+          startAdornment: swatchOrientation === "start" && (
+            <ColorSwatch color={swatchColor} onClick={togglePicker} />
+          ),
+          endAdornment: swatchOrientation === "end" && (
+            <ColorSwatch color={swatchColor} onClick={togglePicker} />
+          ),
+        }}
+      />
+      {showPicker && (
+        <div style={{ background: "white", position: "absolute", zIndex: 1000 }}>
+          <ColorPicker
+            color={swatchColor}
+            alphaType={"none"}
+            styles={{
+              tableHexCell: { width: "35%" },
+              input: {
+                input: {
+                  fontFeatureSettings: `${fonts.SANS_SERIF_FEATURE_SETTINGS}, 'zero'`,
+                },
+              },
+            }}
+            onChange={(_event, newValue) => onChange(newValue.str)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
