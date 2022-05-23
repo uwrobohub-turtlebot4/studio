@@ -387,7 +387,7 @@ export class CoordinateFrame {
     }
 
     mat4.multiply(tempMatrix, tempMatrix, tempTransform.setPose(input).matrix());
-    tempTransform.setMatrix(tempMatrix).toPose(out);
+    tempTransform.setMatrixUnscaled(tempMatrix).toPose(out);
     return true;
   }
 }
