@@ -284,7 +284,7 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
   useEffect(() => {
     if (renderer?.config && followTf != undefined) {
       renderer.renderFrameId = followTf;
-      renderer.animationFrame();
+      renderRef.current.needsRender = true;
     }
   }, [followTf, renderer]);
 
