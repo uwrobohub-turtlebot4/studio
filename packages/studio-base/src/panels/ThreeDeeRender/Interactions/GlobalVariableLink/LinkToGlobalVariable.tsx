@@ -11,19 +11,36 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import LinkPlusIcon from "@mdi/svg/svg/link-plus.svg";
-import { Button, Card, FilledInput, Typography } from "@mui/material";
-import classNames from "classnames";
-import React, { CSSProperties, FormEvent } from "react";
+import AddLinkIcon from "@mui/icons-material/AddLink";
+import {
+  Button,
+  FilledInput,
+  IconButton,
+  Menu,
+  Typography,
+  styled as muiStyled,
+} from "@mui/material";
+import { FormEvent, useState } from "react";
 
-import ChildToggle from "@foxglove/studio-base/components/ChildToggle";
-import Icon from "@foxglove/studio-base/components/Icon";
 import Stack from "@foxglove/studio-base/components/Stack";
-import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 import GlobalVariableName from "../GlobalVariableName";
 import useLinkedGlobalVariables from "../useLinkedGlobalVariables";
 import UnlinkGlobalVariables from "./UnlinkGlobalVariables";
+
+const StyledIconButton = muiStyled(IconButton, {
+  shouldForwardProp: (prop) => prop !== "active",
+})<{
+  active?: boolean;
+}>(({ active = false, theme }) => ({
+  padding: 0,
+  opacity: active ? 0 : theme.palette.action.disabledOpacity,
+
+  "&:hover": {
+    backgroundColor: "transparent",
+    opacity: 1,
+  },
+}));
 
 type AddToLinkedGlobalVariable = {
   topic: string;
@@ -34,7 +51,6 @@ type AddToLinkedGlobalVariable = {
 type Props = {
   highlight?: boolean;
   addToLinkedGlobalVariable: AddToLinkedGlobalVariable;
-  style?: CSSProperties;
 };
 
 function getInitialName(markerKeyPath: string[]) {
@@ -42,23 +58,12 @@ function getInitialName(markerKeyPath: string[]) {
 }
 
 export default function LinkToGlobalVariable({
-  style = {},
   addToLinkedGlobalVariable: { topic, variableValue, markerKeyPath },
   highlight = false,
 }: Props): JSX.Element {
-  const [isOpen, _setIsOpen] = React.useState<boolean>(false);
-  const [name, setName] = React.useState(() => getInitialName(markerKeyPath));
-
-  const setIsOpen = React.useCallback(
-    // eslint-disable-next-line @foxglove/no-boolean-parameters
-    (newValue: boolean) => {
-      _setIsOpen(newValue);
-      if (newValue) {
-        setName(getInitialName(markerKeyPath));
-      }
-    },
-    [markerKeyPath],
-  );
+  const [name, setName] = useState<string>(() => getInitialName(markerKeyPath));
+  const [anchorEl, setAnchorEl] = useState<undefined | HTMLElement>(undefined);
+  const open = Boolean(anchorEl);
 
   const { linkedGlobalVariables, setLinkedGlobalVariables } = useLinkedGlobalVariables();
 
@@ -68,64 +73,76 @@ export default function LinkToGlobalVariable({
     // setGlobalVariables({ [name]: variableValue });
     const newLinkedGlobalVariables = [...linkedGlobalVariables, { topic, markerKeyPath, name }];
     setLinkedGlobalVariables(newLinkedGlobalVariables);
-    setIsOpen(false);
+    handleClose();
   };
 
-  const highlightIconStyle = highlight ? { color: colors.HIGHLIGHT } : {};
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(undefined);
+  };
 
   return (
-    <ChildToggle
-      dataTest={`link-${name}`}
-      position="above"
-      onToggle={setIsOpen}
-      isOpen={isOpen}
-      style={style}
-    >
-      <Icon
-        className={classNames("link-icon", { highlight })}
-        style={highlightIconStyle}
-        fade={!highlight}
-        tooltip="Link this field to a global variable"
-        tooltipProps={{ placement: "top" }}
+    <>
+      <StyledIconButton
+        color="info"
+        size="small"
+        id="link-global-variable-button"
+        aria-controls={open ? "link-global-variable-menu" : undefined}
+        aria-haspopup="true"
+        aria-expanded={open ? "true" : undefined}
+        onClick={handleClick}
+        title="Link this field to a global variable"
+        active={highlight}
       >
-        <LinkPlusIcon />
-      </Icon>
-      <Card
-        elevation={4}
-        component="form"
-        variant="elevation"
-        style={{ overflowWrap: "break-word", pointerEvents: "auto", width: 240 }}
-        onSubmit={addLink}
+        <AddLinkIcon fontSize="small" />
+      </StyledIconButton>
+      <Menu
+        id="link-global-variable-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        MenuListProps={{
+          "aria-labelledby": "link-global-variable-button",
+        }}
+        PaperProps={{
+          variant: "elevation",
+          elevation: 4,
+          style: { overflowWrap: "break-word", pointerEvents: "auto", width: 280 },
+        }}
         data-test="link-form"
       >
-        <Stack padding={2} gap={1}>
-          <Typography variant="body2">
-            When linked, clicking a new object from {topic} will update the global variable&nbsp;
-            <GlobalVariableName name={name} />.
-          </Typography>
-          <UnlinkGlobalVariables name={name} showList />
-          <FilledInput
-            size="small"
-            autoFocus
-            type="text"
-            value={`$${name}`}
-            onChange={(e) => setName(e.target.value.replace(/^\$/, ""))}
-          />
-          <Stack direction="row" gap={1} data-test="action-buttons">
-            <Button
-              variant="contained"
-              color={name.length > 0 ? "primary" : "inherit"}
-              disabled={name.length === 0}
-              onClick={addLink}
-            >
-              Add Link
-            </Button>
-            <Button variant="contained" color="inherit" onClick={() => setIsOpen(false)}>
-              Cancel
-            </Button>
+        <form onSubmit={addLink}>
+          <Stack paddingY={1} paddingX={2} gap={1}>
+            <Typography variant="body2">
+              When linked, clicking a new object from {topic} will update the global variable&nbsp;
+              <GlobalVariableName name={name} />.
+            </Typography>
+            <UnlinkGlobalVariables name={name} showList />
+            <FilledInput
+              size="small"
+              autoFocus
+              type="text"
+              value={`$${name}`}
+              onChange={(e) => setName(e.target.value.replace(/^\$/, ""))}
+            />
+            <Stack direction="row" gap={1} data-test="action-buttons">
+              <Button
+                variant="contained"
+                color={name.length > 0 ? "primary" : "inherit"}
+                disabled={name.length === 0}
+                onClick={addLink}
+              >
+                Add Link
+              </Button>
+              <Button variant="contained" color="inherit" onClick={handleClose}>
+                Cancel
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
-      </Card>
-    </ChildToggle>
+        </form>
+      </Menu>
+    </>
   );
 }
