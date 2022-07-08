@@ -11,9 +11,9 @@ import saveFile from "@foxglove/studio-base/util/saveFile";
 import { Renderer } from "../Renderer";
 import { SceneExtension } from "../SceneExtension";
 import { SettingsTreeEntry } from "../SettingsManager";
+import { exportScene, SceneFormat } from "../export";
 import { fieldSize, PRECISION_DEGREES, PRECISION_DISTANCE } from "../settings";
 import type { FrameAxes } from "./FrameAxes";
-import { exportScene, SceneFormat } from "./export";
 
 export const DEFAULT_LABEL_SCALE_FACTOR = 1;
 export const DEFAULT_AXIS_SCALE = 1;
