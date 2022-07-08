@@ -6,12 +6,14 @@ import { cloneDeep, set } from "lodash";
 
 import { DEFAULT_CAMERA_STATE } from "@foxglove/regl-worldview";
 import { SettingsTreeAction } from "@foxglove/studio";
+import saveFile from "@foxglove/studio-base/util/saveFile";
 
 import { Renderer } from "../Renderer";
 import { SceneExtension } from "../SceneExtension";
 import { SettingsTreeEntry } from "../SettingsManager";
 import { fieldSize, PRECISION_DEGREES, PRECISION_DISTANCE } from "../settings";
 import type { FrameAxes } from "./FrameAxes";
+import { exportScene, SceneFormat } from "./export";
 
 export const DEFAULT_LABEL_SCALE_FACTOR = 1;
 export const DEFAULT_AXIS_SCALE = 1;
@@ -72,7 +74,10 @@ export class CoreSettings extends SceneExtension {
         path: ["scene"],
         node: {
           label: "Scene",
-          actions: [{ type: "action", id: "reset-scene", label: "Reset" }],
+          actions: [
+            { type: "action", id: "export-scene", label: "Export" },
+            { type: "action", id: "reset-scene", label: "Reset" },
+          ],
           fields: {
             enableStats: {
               label: "Render stats",
@@ -203,6 +208,34 @@ export class CoreSettings extends SceneExtension {
     ];
   }
 
+  async exportSceneToFile(): Promise<void> {
+    const EXPORT_SCENE_OPTIONS: SaveFilePickerOptions = {
+      types: [
+        {
+          description: "glTF Binary",
+          accept: {
+            "model/gltf-binary": [".glb"],
+          },
+        },
+        {
+          description: "glTF JSON",
+          accept: {
+            "application/json": [".gltf", ".json"],
+          },
+        },
+      ],
+    };
+
+    await saveFile(
+      async (name) => {
+        const format = name.toLowerCase().endsWith(".glb") ? SceneFormat.Glb : SceneFormat.GlTF;
+        return await exportScene(format, this.renderer.scene);
+      },
+      "foxglove-studio.glb",
+      EXPORT_SCENE_OPTIONS,
+    );
+  }
+
   handleSettingsAction = (action: SettingsTreeAction): void => {
     if (action.action === "perform-node-action" && action.payload.id === "reset-camera") {
       this.renderer.updateConfig((draft) => {
@@ -212,15 +245,19 @@ export class CoreSettings extends SceneExtension {
       return;
     }
 
-    if (action.action === "perform-node-action" && action.payload.id === "reset-scene") {
-      this.renderer.updateConfig((draft) => {
-        draft.scene = {};
-      });
-      this.updateSettingsTree();
+    if (action.action === "perform-node-action") {
+      if (action.payload.id === "export-scene") {
+        this.exportSceneToFile().catch((err) => console.error(err));
+      } else if (action.payload.id === "reset-scene") {
+        this.renderer.updateConfig((draft) => {
+          draft.scene = {};
+        });
+        this.updateSettingsTree();
+      }
       return;
     }
 
-    if (action.action !== "update" || action.payload.path.length === 0) {
+    if (action.payload.path.length === 0) {
       return;
     }
 
