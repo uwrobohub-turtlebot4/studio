@@ -4,20 +4,12 @@
 
 import RulerIcon from "@mdi/svg/svg/ruler.svg";
 import Video3dIcon from "@mdi/svg/svg/video-3d.svg";
-import {
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Paper,
-  useTheme,
-} from "@mui/material";
+import { IconButton, Paper } from "@mui/material";
 import { isEqual, cloneDeep, merge } from "lodash";
 import React, { useCallback, useLayoutEffect, useEffect, useState, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useResizeDetector } from "react-resize-detector";
-import { useLatest, useLongPress } from "react-use";
+import { useLatest } from "react-use";
 import { DeepPartial } from "ts-essentials";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -40,10 +32,8 @@ import {
   SettingsTreeNodes,
   Topic,
 } from "@foxglove/studio";
-import PublishGoalIcon from "@foxglove/studio-base/components/PublishGoalIcon";
-import PublishPointIcon from "@foxglove/studio-base/components/PublishPointIcon";
-import PublishPoseEstimateIcon from "@foxglove/studio-base/components/PublishPoseEstimateIcon";
 import useCleanup from "@foxglove/studio-base/hooks/useCleanup";
+import PublishTool from "@foxglove/studio-base/panels/ThreeDeeRender/PublishTool";
 import { DEFAULT_PUBLISH_SETTINGS } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/CoreSettings";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 import { Point, makeCovarianceArray } from "@foxglove/studio-base/util/geometry";
@@ -67,12 +57,6 @@ const PANEL_STYLE: React.CSSProperties = {
   height: "100%",
   display: "flex",
   position: "relative",
-};
-
-const PublishClickIcons: Record<PublishClickType, React.ReactNode> = {
-  pose: <PublishGoalIcon fontSize="inherit" />,
-  point: <PublishPointIcon fontSize="inherit" />,
-  pose_estimate: <PublishPoseEstimateIcon fontSize="inherit" />,
 };
 
 const PublishDatatypes = new Map(
@@ -221,17 +205,6 @@ function RendererOverlay(props: {
     renderer?.setSelectedRenderable(selectedRenderable);
   }, [renderer, selectedRenderable]);
 
-  const publickClickButtonRef = useRef<HTMLButtonElement>(ReactNull);
-  const [publishMenuExpanded, setPublishMenuExpanded] = useState(false);
-  const selectedPublishClickIcon = PublishClickIcons[props.publishClickType];
-
-  const onLongPressPublish = useCallback(() => {
-    setPublishMenuExpanded(true);
-  }, []);
-  const longPressPublishEvent = useLongPress(onLongPressPublish);
-
-  const theme = useTheme();
-
   return (
     <React.Fragment>
       <div
@@ -272,70 +245,12 @@ function RendererOverlay(props: {
           </IconButton>
 
           {props.canPublish && (
-            <>
-              <IconButton
-                {...longPressPublishEvent}
-                color={props.publishActive ? "info" : "inherit"}
-                title={props.publishActive ? "Click to cancel" : "Click to publish"}
-                ref={publickClickButtonRef}
-                onClick={props.onClickPublish}
-                data-test="publish-button"
-                style={{ fontSize: "1rem", pointerEvents: "auto" }}
-              >
-                {selectedPublishClickIcon}
-                <div
-                  style={{
-                    borderBottom: "6px solid currentColor",
-                    borderRight: "6px solid transparent",
-                    bottom: 0,
-                    left: 0,
-                    height: 0,
-                    width: 0,
-                    margin: theme.spacing(0.25),
-                    position: "absolute",
-                  }}
-                />
-              </IconButton>
-              <Menu
-                id="publish-menu"
-                anchorEl={publickClickButtonRef.current}
-                anchorOrigin={{ vertical: "top", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                open={publishMenuExpanded}
-                onClose={() => setPublishMenuExpanded(false)}
-              >
-                <MenuItem
-                  selected={props.publishClickType === "pose_estimate"}
-                  onClick={() => {
-                    props.onChangePublishClickType("pose_estimate");
-                    setPublishMenuExpanded(false);
-                  }}
-                >
-                  <ListItemIcon>{PublishClickIcons.pose_estimate}</ListItemIcon>
-                  <ListItemText>Publish pose estimate</ListItemText>
-                </MenuItem>
-                <MenuItem
-                  selected={props.publishClickType === "pose"}
-                  onClick={() => {
-                    props.onChangePublishClickType("pose");
-                    setPublishMenuExpanded(false);
-                  }}
-                >
-                  <ListItemIcon>{PublishClickIcons.pose}</ListItemIcon>
-                  <ListItemText>Publish pose</ListItemText>
-                </MenuItem>
-                <MenuItem
-                  selected={props.publishClickType === "point"}
-                  onClick={() => {
-                    props.onChangePublishClickType("point");
-                    setPublishMenuExpanded(false);
-                  }}
-                >
-                  <ListItemIcon>{PublishClickIcons.point}</ListItemIcon>
-                  <ListItemText>Publish point</ListItemText>
-                </MenuItem>
-              </Menu>
-            </>
+            <PublishTool
+              publishActive={props.publishActive}
+              publishClickType={props.publishClickType}
+              onChangePublishClickType={props.onChangePublishClickType}
+              onClickPublish={props.onClickPublish}
+            />
           )}
         </Paper>
       </div>
