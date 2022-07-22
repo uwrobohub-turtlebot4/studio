@@ -150,7 +150,6 @@ const useStyles = makeStyles((theme: Theme) => ({
     display: "flex",
     flexDirection: "column",
     backgroundColor: alpha(theme.palette.background.paper, 0.8),
-    // overflow: "auto",
     pointerEvents: "auto",
     [legendDisplay !== "floating" ? "height" : "maxHeight"]: "100%",
     position: "relative",
@@ -215,7 +214,6 @@ const useStyles = makeStyles((theme: Theme) => ({
     flexDirection: "column",
     flexGrow: 1,
     gap: theme.spacing(0.5),
-    // overflow: "auto",
     [legendDisplay === "left" ? "width" : "height"]: sidebarDimension,
   }),
 }));

@@ -53,8 +53,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     listIcon: {
       padding: theme.spacing(0.25),
-      position: "sticky",
-      left: 0,
       // creates an opaque background for the sticky element
       backgroundImage: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper})`,
       backgroundBlendMode: "overlay",
@@ -86,21 +84,23 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     actions: {
+      opacity: 0,
+      position: "relative",
+      "&:hover": {
+        opacity: 1,
+      },
+    },
+    actionButtons: {
       display: "flex",
       flexDirection: "row",
       alignItems: "center",
       padding: theme.spacing(0.25),
       gap: theme.spacing(0.25),
-      position: "sticky",
+      position: "absolute",
       right: 0,
-      opacity: 0,
       // creates an opaque background for the sticky element
       backgroundImage: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper})`,
       backgroundBlendMode: "overlay",
-
-      "&:hover": {
-        opacity: 1,
-      },
     },
   }),
 );
@@ -244,26 +244,28 @@ export default function PlotLegendRow({
       )}
       {!showPlotValuesInLegend && <div />}
       <div className={classes.actions}>
-        <IconButton
-          className={classes.actionButton}
-          size="small"
-          title="Edit settings"
-          onClick={() => setSettingsModalOpen(true)}
-        >
-          <MoreVertIcon fontSize="small" />
-        </IconButton>
-        <IconButton
-          className={classes.actionButton}
-          size="small"
-          title={`Remove ${path.value}`}
-          onClick={() => {
-            const newPaths = paths.slice();
-            newPaths.splice(index, 1);
-            savePaths(newPaths);
-          }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        <div className={classes.actionButtons}>
+          <IconButton
+            className={classes.actionButton}
+            size="small"
+            title="Edit settings"
+            onClick={() => setSettingsModalOpen(true)}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            className={classes.actionButton}
+            size="small"
+            title={`Remove ${path.value}`}
+            onClick={() => {
+              const newPaths = paths.slice();
+              newPaths.splice(index, 1);
+              savePaths(newPaths);
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </div>
       </div>
     </div>
   );
