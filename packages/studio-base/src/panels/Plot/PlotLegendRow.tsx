@@ -67,6 +67,10 @@ const useStyles = makeStyles((theme: Theme) =>
       display: "flex",
       alignItems: "center",
       padding: theme.spacing(0.25),
+      "& div, & input": {
+        maxWidth: "100%",
+      },
+      width: "100%",
     },
     plotValue: {
       display: "flex",
@@ -238,6 +242,7 @@ export default function PlotLegendRow({
           </Typography>
         </div>
       )}
+      {!showPlotValuesInLegend && <div />}
       <div className={classes.actions}>
         <IconButton
           className={classes.actionButton}

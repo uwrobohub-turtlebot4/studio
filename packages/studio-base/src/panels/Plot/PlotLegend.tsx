@@ -132,15 +132,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     alignItems: "stretch",
     position: "relative",
     display: "grid",
-    gridTemplateColumns: ({ showPlotValuesInLegend = false }: StyleProps) =>
-      [
-        "auto",
-        "minmax(max-content, 1fr)",
-        showPlotValuesInLegend && "minmax(max-content, 1fr)",
-        "auto",
-      ]
-        .filter(Boolean)
-        .join(" "),
+    gridTemplateColumns: "auto minmax(0, 1fr) auto auto",
   },
   header: {
     display: "flex",
@@ -158,7 +150,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     display: "flex",
     flexDirection: "column",
     backgroundColor: alpha(theme.palette.background.paper, 0.8),
-    overflow: "auto",
+    // overflow: "auto",
     pointerEvents: "auto",
     [legendDisplay !== "floating" ? "height" : "maxHeight"]: "100%",
     position: "relative",
@@ -223,7 +215,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     flexDirection: "column",
     flexGrow: 1,
     gap: theme.spacing(0.5),
-    overflow: "auto",
+    // overflow: "auto",
     [legendDisplay === "left" ? "width" : "height"]: sidebarDimension,
   }),
 }));
