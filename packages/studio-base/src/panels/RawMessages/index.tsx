@@ -134,6 +134,8 @@ function RawMessages(props: Props) {
   const { topicPath, diffMethod, diffTopicPath, diffEnabled, showFullMessageForDiff } = config;
   const { topics, datatypes } = useDataSourceInfo();
 
+  const [controlledTopicPath, setControlledTopicPath] = useState(topicPath);
+
   const defaultGetItemString = useGetItemStringWithTimezone();
   const getItemString = useMemo(
     () =>
@@ -217,9 +219,10 @@ function RawMessages(props: Props) {
     });
   }, [config, settingsActionHandler, updateSettingsTree]);
 
-  const onTopicPathChange = useCallback(
+  const onTopicPathSelect = useCallback(
     (newTopicPath: string) => {
       saveConfig({ topicPath: newTopicPath });
+      setControlledTopicPath(newTopicPath);
     },
     [saveConfig],
   );
@@ -316,12 +319,12 @@ function RawMessages(props: Props) {
           itemLabel={itemLabel}
           itemValue={itemValue}
           valueAction={undefined}
-          onTopicPathChange={onTopicPathChange}
+          onTopicPathChange={onTopicPathSelect}
           openSiblingPanel={openSiblingPanel}
         />
       );
     },
-    [getValueLabels, onTopicPathChange, openSiblingPanel],
+    [getValueLabels, onTopicPathSelect, openSiblingPanel],
   );
 
   const valueRenderer = useCallback(
@@ -375,14 +378,14 @@ function RawMessages(props: Props) {
               itemLabel={itemLabel}
               itemValue={itemValue}
               valueAction={valueAction}
-              onTopicPathChange={onTopicPathChange}
+              onTopicPathChange={onTopicPathSelect}
               openSiblingPanel={openSiblingPanel}
             />
           );
         }}
       </ReactHoverObserver>
     ),
-    [classes.hoverObserver, datatypes, getValueLabels, onTopicPathChange, openSiblingPanel],
+    [classes.hoverObserver, datatypes, getValueLabels, onTopicPathSelect, openSiblingPanel],
   );
 
   const renderSingleTopicOrDiffOutput = useCallback(() => {
@@ -674,8 +677,9 @@ function RawMessages(props: Props) {
         <Stack fullWidth paddingLeft={0.25}>
           <MessagePathInput
             index={0}
-            path={topicPath}
-            onChange={onTopicPathChange}
+            path={controlledTopicPath}
+            onChange={setControlledTopicPath}
+            onSelect={onTopicPathSelect}
             inputStyle={{ height: 20 }}
           />
           {diffEnabled && (
