@@ -171,8 +171,10 @@ function getExamplePrimitive(primitiveType: RosPrimitive) {
 type MessagePathInputBaseProps = {
   supportsMathModifiers?: boolean;
   path: string; // A path of the form `/topic.some_field[:]{id==42}.x`
+  // fixme - wtf is this and why is making anonymous functions bad?
   index?: number; // Optional index field which gets passed to `onChange` (so you don't have to create anonymous functions)
   onChange: (value: string, index?: number) => void;
+  onSelect?: (value: string) => void;
   validTypes?: readonly string[]; // Valid types, like "message", "array", or "primitive", or a ROS primitive like "float64"
   noMultiSlices?: boolean; // Don't suggest slices with multiple values `[:]`, only single values like `[0]`.
   autoSize?: boolean;
@@ -204,7 +206,7 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
 
   const topicFields = useMemo(() => getFieldPaths(topics, datatypes), [datatypes, topics]);
 
-  const onChangeProp = props.onChange;
+  const { onChange: onChangeProp, onSelect: onSelectProp } = props;
   const onChange = useCallback(
     (event: React.SyntheticEvent<Element>, rawValue: string) => {
       // When typing a "{" character, also  insert a "}", so you get an
@@ -243,7 +245,8 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
         autocompleteType === "topicName" && !messageIsValidType && !isSimpleField;
       const value = keepGoingAfterTopicName ? rawValue + "." : rawValue;
 
-      onChangeProp(completeStart + value + completeEnd, props.index);
+      // fixme - this is not called on "esc" even tho we have a new selection...
+      onSelectProp?.(completeStart + value + completeEnd);
 
       // We want to continue typing if we're dealing with a topic name,
       // or if we just autocompleted something with a filter (because we might want to
@@ -256,7 +259,7 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
         autocomplete.blur();
       }
     },
-    [onChangeProp, path, props.index, topicFields, validTypes],
+    [onSelectProp, path, topicFields, validTypes],
   );
 
   const rosPath = useMemo(() => parseRosPath(path), [path]);
@@ -488,6 +491,9 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
         onSelect={(value, autocomplete) =>
           onSelect(value, autocomplete, autocompleteType, autocompleteRange)
         }
+        onBlur={() => {
+          // fixme - indicate the item has been selected
+        }}
         hasError={hasError}
         placeholder={
           placeholder != undefined && placeholder !== "" ? placeholder : "/some/topic.msgs[0].field"
