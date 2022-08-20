@@ -190,12 +190,15 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     rafRequestedRef.current = undefined;
 
     const ctx = latestPipelineContextRef.current;
+    latestPipelineContextRef.current = undefined;
 
     const playerState = ctx?.playerState;
     previousPlayerStateRef.current = playerState;
 
     if (renderingRef.current) {
+      console.log("calling setSlowRender(true)");
       setSlowRender(true);
+      console.log("called setSlowRender(true)");
       return;
     }
     setSlowRender(false);
@@ -225,6 +228,12 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       if (renderState.currentFrame?.length !== 0 || currentFrame?.length !== 0) {
         shouldRender = true;
         renderState.currentFrame = currentFrame;
+
+        for (const thing of currentFrame ?? []) {
+          if (thing.topic === "/tf") {
+            console.log("renderPanelImpl", thing.receiveTime);
+          }
+        }
       }
     }
 
@@ -347,18 +356,29 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   const queueRender = useCallback(() => {
     if (!renderFn || rafRequestedRef.current != undefined) {
+      // console.log("not calling requestAnimationFrame()");
       return;
     }
+    // console.log("calling requestAnimationFrame()");
     rafRequestedRef.current = requestAnimationFrame(renderPanelImpl);
   }, [renderFn, renderPanelImpl]);
 
   // Queue render when message pipeline has new data
   const messagePipelineSelector = useCallback(
     (ctx: MessagePipelineContext) => {
+      for (const thing of ctx.messageEventsBySubscriberId.get(panelId) ?? []) {
+        if (thing.topic === "/tf") {
+          console.log("PanelExtensionAdapter.tsx", thing.receiveTime);
+        }
+      }
+
+      if (latestPipelineContextRef.current && latestPipelineContextRef.current !== ctx) {
+        console.warn("latestPipelineContextRef already defined");
+      }
       latestPipelineContextRef.current = ctx;
       queueRender();
     },
-    [queueRender],
+    [queueRender, panelId],
   );
 
   useEffect(() => {

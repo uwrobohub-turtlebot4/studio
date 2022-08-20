@@ -493,6 +493,13 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
             }
           }
         }
+
+        for (const thing of renderState.currentFrame ?? []) {
+          if (thing.topic === "/tf") {
+            console.log("ThreeDeeRender.tsx", thing.receiveTime);
+          }
+        }
+
         setMessages(renderState.currentFrame);
       });
     };

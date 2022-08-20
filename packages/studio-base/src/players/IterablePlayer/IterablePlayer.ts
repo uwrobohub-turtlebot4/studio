@@ -669,6 +669,12 @@ export class IterablePlayer implements Player {
     const messages = this._messages;
     this._messages = [];
 
+    for (const thing of messages) {
+      if (thing.topic === "/tf") {
+        console.log("IterablePlayer.ts", thing.receiveTime);
+      }
+    }
+
     const currentTime = this._currentTime ?? this._start;
 
     // Notify the block loader about the current time so it tries to keep current time loaded
