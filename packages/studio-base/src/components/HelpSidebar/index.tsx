@@ -3,11 +3,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import ChevronLeftIcon from "@mdi/svg/svg/chevron-left.svg";
-import { Link, Typography } from "@mui/material";
+import { IconButton, Link, Typography } from "@mui/material";
 import { useMemo } from "react";
 import { useUnmount } from "react-use";
 
-import Icon from "@foxglove/studio-base/components/Icon";
 import KeyboardShortcutHelp from "@foxglove/studio-base/components/KeyboardShortcut.help.md";
 import MesssagePathSyntaxHelp from "@foxglove/studio-base/components/MessagePathSyntax/index.help.md";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
@@ -133,14 +132,14 @@ export default function HelpSidebar({
         helpInfo.content == undefined
           ? undefined
           : [
-              <Icon
+              <IconButton
                 key="back-arrow"
                 size="small"
                 style={{ marginRight: "5px" }}
                 onClick={() => setHelpInfo(DEFAULT_HELP_INFO)}
               >
                 <ChevronLeftIcon />
-              </Icon>,
+              </IconButton>,
             ]
       }
       title={isHomeView ? "Help" : helpInfo.title}
