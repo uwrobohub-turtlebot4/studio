@@ -11,10 +11,10 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { ComponentProps, CSSProperties, ReactNode, MouseEvent } from "react";
+import { Tooltip, TooltipProps } from "@mui/material";
+import { CSSProperties, ReactNode, MouseEvent } from "react";
 import { makeStyles } from "tss-react/mui";
 
-import Tooltip, { useTooltip } from "@foxglove/studio-base/components/Tooltip";
 import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 export type IconSize = "xlarge" | "large" | "medium" | "small" | "xsmall" | "xxsmall";
@@ -90,8 +90,8 @@ type Props = {
   clickable?: boolean;
   className?: string;
   style?: CSSProperties;
-  tooltip?: ReactNode;
-  tooltipProps?: Partial<ComponentProps<typeof Tooltip> & { alwaysShown?: false }>;
+  tooltip?: TooltipProps["title"];
+  tooltipProps?: TooltipProps;
   dataTest?: string;
 };
 
@@ -134,14 +134,8 @@ const Icon = (props: Props): JSX.Element => {
     }
   };
 
-  const { ref: tooltipRef, tooltip: tooltipNode } = useTooltip({
-    contents: tooltip,
-    ...tooltipProps,
-  });
-
-  return (
+  const icon = (
     <span
-      ref={tooltipRef}
       className={classNames}
       onClick={clickHandler}
       style={style}
@@ -149,9 +143,18 @@ const Icon = (props: Props): JSX.Element => {
       {...rest}
     >
       {children}
-      {tooltipNode}
     </span>
   );
+
+  if (tooltip != undefined) {
+    return (
+      <Tooltip arrow {...tooltipProps} title={tooltip}>
+        {icon}
+      </Tooltip>
+    );
+  }
+
+  return icon;
 };
 
 Icon.displayName = "Icon";
