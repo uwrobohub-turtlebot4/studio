@@ -58,6 +58,8 @@ const Timestamp = muiStyled(Typography, {
   bottom: 0,
   zIndex: theme.zIndex.tooltip,
   transition: "opacity 0.1s ease-in-out",
+  color: theme.palette.common.white,
+  textShadow: `1px 1px 0 ${theme.palette.common.black}`,
   opacity: 0,
   padding: theme.spacing(0.25, 0.5),
   userSelect: "all",
