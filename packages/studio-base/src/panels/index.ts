@@ -26,6 +26,8 @@ import PublishHelp from "./Publish/index.help.md";
 import publishThumbnail from "./Publish/thumbnail.png";
 import RawMessagesHelp from "./RawMessages/index.help.md";
 import rawMessagesThumbnail from "./RawMessages/thumbnail.png";
+import RecordingHelp from "./Recording/index.help.md";
+import recordingThumbnail from "./Recording/thumbnail.png";
 import StateTransitionsHelp from "./StateTransitions/index.help.md";
 import stateTransitionsThumbnail from "./StateTransitions/thumbnail.png";
 import TabHelp from "./Tab/index.help.md";
@@ -153,6 +155,14 @@ const builtin: PanelInfo[] = [
     help: RawMessagesHelp,
     thumbnail: rawMessagesThumbnail,
     module: async () => await import("./RawMessages"),
+  },
+  {
+    title: "Recording",
+    type: "Recording",
+    description: "Record Studio data to disk.",
+    help: RecordingHelp,
+    thumbnail: recordingThumbnail,
+    module: async () => await import("./Recording"),
   },
   {
     title: "Log",
