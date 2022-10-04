@@ -8,9 +8,11 @@ import { isEqual } from "lodash";
 
 import Logger from "@foxglove/log";
 import { loadDecompressHandlers, parseChannel, ParsedChannel } from "@foxglove/mcap-support";
-import { fromNanoSec, Time, toRFC3339String } from "@foxglove/rostime";
+import { fromNanoSec, toRFC3339String } from "@foxglove/rostime";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
-import ConsoleApi from "@foxglove/studio-base/services/ConsoleApi";
+import ConsoleApi, {
+  DataPlatformSourceParameters,
+} from "@foxglove/studio-base/services/ConsoleApi";
 
 const log = Logger.getLogger(__filename);
 
@@ -49,10 +51,7 @@ export async function* streamMessages({
   signal?: AbortSignal;
 
   /** Parameters indicating the time range to stream. */
-  params: (
-    | { importId: string; deviceId?: string; start?: Time; end?: Time }
-    | { importId?: string; deviceId: string; start: Time; end: Time }
-  ) & {
+  params: DataPlatformSourceParameters & {
     topics: readonly string[];
     replayPolicy?: "lastPerChannel" | "";
     replayLookbackSeconds?: number;
@@ -76,11 +75,19 @@ export async function* streamMessages({
 
   log.debug("streamMessages", params);
   const startTimer = performance.now();
+
+  const startString = params.start ? toRFC3339String(params.start) : undefined;
+  const endString = params.end ? toRFC3339String(params.end) : undefined;
+
+  const deviceId = "deviceId" in params ? params.deviceId : undefined;
+  const importId = "importId" in params ? params.importId : undefined;
+
+  const streamParams = importId
+    ? { importId, start: startString, end: endString }
+    : { deviceId: deviceId!, start: startString ?? "", end: endString ?? "" };
+
   const { link: mcapUrl } = await api.stream({
-    deviceId: params.deviceId,
-    importId: params.importId,
-    start: params.start ? toRFC3339String(params.start) : undefined,
-    end: params.end ? toRFC3339String(params.end) : undefined,
+    ...streamParams,
     topics: params.topics,
     outputFormat: "mcap0",
     replayPolicy: params.replayPolicy,

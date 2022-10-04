@@ -30,27 +30,28 @@ class FoxgloveDataPlatformDataSourceFactory implements IDataSourceFactory {
     const deviceId = args.deviceId as string | undefined;
     const importId = args.importId as string | undefined;
 
-    if (!deviceId && !importId) {
-      return;
-    }
-
     const startTime = start ? fromRFC3339String(start) : undefined;
     const endTime = end ? fromRFC3339String(end) : undefined;
 
+    if (!(importId || (deviceId && startTime && endTime))) {
+      return;
+    }
+    const dpSourceParams = importId
+      ? { importId, start: startTime, end: endTime }
+      : { deviceId: deviceId!, start: startTime!, end: endTime! };
+
     const source = new DataPlatformIterableSource({
       api: args.consoleApi,
-      deviceId,
-      importId,
-      start: startTime,
-      end: endTime,
+      ...dpSourceParams,
     });
+
     return new IterablePlayer({
       metricsCollector: args.metricsCollector,
       source,
       sourceId: this.id,
       urlParams: {
         ...(importId && { importId }),
-        ...(deviceId && { deviceId }),
+        ...(!importId && deviceId && { deviceId }),
         ...(startTime && { start }),
         ...(endTime && { end }),
       },

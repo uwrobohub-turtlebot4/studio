@@ -111,6 +111,14 @@ export type ConsoleApiLayout = {
   data?: Record<string, unknown>;
 };
 
+export type DataPlatformSourceParameters =
+  | { deviceId: string; start: Time; end: Time }
+  | { importId: string; start?: Time; end?: Time };
+
+export type DataPlatformSourceRequest =
+  | { deviceId: string; start: string; end: string }
+  | { importId: string; start?: string; end?: string };
+
 type ApiResponse<T> = { status: number; json: T };
 
 class ConsoleApi {
@@ -256,22 +264,13 @@ class ConsoleApi {
     return (await this.delete(`/v1/layouts/${id}`)).status === 200;
   }
 
-  public async coverage(params: {
-    deviceId?: string;
-    importId?: string;
-    start?: string;
-    end?: string;
-  }): Promise<CoverageResponse[]> {
+  public async coverage(params: DataPlatformSourceRequest): Promise<CoverageResponse[]> {
     return await this.get<CoverageResponse[]>("/v1/data/coverage", params);
   }
 
-  public async topics(params: {
-    deviceId?: string;
-    importId?: string;
-    start?: string;
-    end?: string;
-    includeSchemas?: boolean;
-  }): Promise<readonly TopicResponse[]> {
+  public async topics(
+    params: DataPlatformSourceRequest & { includeSchemas?: boolean },
+  ): Promise<readonly TopicResponse[]> {
     return (
       await this.get<RawTopicResponse[]>("/v1/data/topics", {
         ...params,
@@ -287,16 +286,14 @@ class ConsoleApi {
     });
   }
 
-  public async stream(params: {
-    deviceId?: string;
-    importId?: string;
-    start?: string;
-    end?: string;
-    topics: readonly string[];
-    outputFormat?: "bag1" | "mcap0";
-    replayPolicy?: "lastPerChannel" | "";
-    replayLookbackSeconds?: number;
-  }): Promise<{ link: string }> {
+  public async stream(
+    params: DataPlatformSourceRequest & {
+      topics: readonly string[];
+      outputFormat?: "bag1" | "mcap0";
+      replayPolicy?: "lastPerChannel" | "";
+      replayLookbackSeconds?: number;
+    },
+  ): Promise<{ link: string }> {
     return await this.post<{ link: string }>("/v1/data/stream", params);
   }
 

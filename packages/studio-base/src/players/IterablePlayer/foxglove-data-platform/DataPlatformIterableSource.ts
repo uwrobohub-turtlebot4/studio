@@ -23,7 +23,10 @@ import {
   MessageEvent,
   TopicStats,
 } from "@foxglove/studio-base/players/types";
-import ConsoleApi, { CoverageResponse } from "@foxglove/studio-base/services/ConsoleApi";
+import ConsoleApi, {
+  CoverageResponse,
+  DataPlatformSourceParameters,
+} from "@foxglove/studio-base/services/ConsoleApi";
 import { RosDatatypes } from "@foxglove/studio-base/types/RosDatatypes";
 import { formatTimeRaw } from "@foxglove/studio-base/util/time";
 
@@ -51,11 +54,7 @@ export type DataPlatformInterableSourceConsoleApi = Pick<
 
 type DataPlatformIterableSourceOptions = {
   api: DataPlatformInterableSourceConsoleApi;
-  deviceId?: string;
-  importId?: string;
-  start?: Time;
-  end?: Time;
-};
+} & DataPlatformSourceParameters;
 
 export class DataPlatformIterableSource implements IIterableSource {
   private readonly _consoleApi: DataPlatformInterableSourceConsoleApi;
@@ -79,26 +78,27 @@ export class DataPlatformIterableSource implements IIterableSource {
     this._consoleApi = options.api;
     this._start = options.start;
     this._end = options.end;
-    this._deviceId = options.deviceId;
-    this._importId = options.importId;
+    this._deviceId = "deviceId" in options ? options.deviceId : undefined;
+    this._importId = "importId" in options ? options.importId : undefined;
   }
 
   public async initialize(): Promise<Initalization> {
+    const startString = this._start ? toRFC3339String(this._start) : undefined;
+    const endString = this._end ? toRFC3339String(this._end) : undefined;
+
+    if (!(this._importId || (this._deviceId && startString && endString))) {
+      throw new Error("Either importId, or all of deviceId/start/end is required");
+    }
+
+    const apiParams = this._importId
+      ? { importId: this._importId, start: startString, end: endString }
+      : { deviceId: this._deviceId!, start: startString!, end: endString! };
+
     const [coverage, rawTopics] = await Promise.all([
-      this._consoleApi.coverage({
-        ...(this._importId && { importId: this._importId }),
-        ...(this._deviceId && { deviceId: this._deviceId }),
-        ...(this._start && { start: toRFC3339String(this._start) }),
-        ...(this._end && { end: toRFC3339String(this._end) }),
-      }),
-      this._consoleApi.topics({
-        ...(this._importId && { importId: this._importId }),
-        ...(this._deviceId && { deviceId: this._deviceId }),
-        ...(this._start && { start: toRFC3339String(this._start) }),
-        ...(this._end && { end: toRFC3339String(this._end) }),
-        includeSchemas: true,
-      }),
+      this._consoleApi.coverage(apiParams),
+      this._consoleApi.topics({ ...apiParams, includeSchemas: true }),
     ]);
+
     if (rawTopics.length === 0 || coverage.length === 0) {
       throw new Error(
         this._deviceId && this._start && this._end
@@ -235,16 +235,11 @@ export class DataPlatformIterableSource implements IIterableSource {
     const streamEnd = clampTime(args.end ?? this._end, this._start, this._end);
 
     if (args.consumptionType === "full") {
-      const stream = streamMessages({
-        api,
-        parsedChannelsByTopic,
-        params: {
-          ...(importId ? { importId } : { deviceId: deviceId! }),
-          start: streamStart,
-          end: streamEnd,
-          topics: args.topics,
-        },
-      });
+      const streamByParams = importId
+        ? { importId, start: streamStart, end: streamEnd, topics: args.topics }
+        : { deviceId: deviceId!, start: streamStart, end: streamEnd, topics: args.topics };
+
+      const stream = streamMessages({ api, parsedChannelsByTopic, params: streamByParams });
 
       for await (const messages of stream) {
         for (const message of messages) {
@@ -257,17 +252,13 @@ export class DataPlatformIterableSource implements IIterableSource {
 
     let localStart = streamStart;
     let localEnd = clampTime(addTime(localStart, { sec: 5, nsec: 0 }), streamStart, streamEnd);
+
+    const streamByParams = importId
+      ? { importId, start: localStart, end: localEnd, topics: args.topics }
+      : { deviceId: deviceId!, start: localStart, end: localEnd, topics: args.topics };
+
     for (;;) {
-      const stream = streamMessages({
-        api,
-        parsedChannelsByTopic,
-        params: {
-          ...(importId ? { importId } : { deviceId: deviceId! }),
-          start: localStart,
-          end: localEnd,
-          topics: args.topics,
-        },
-      });
+      const stream = streamMessages({ api, parsedChannelsByTopic, params: streamByParams });
 
       for await (const messages of stream) {
         for (const message of messages) {
@@ -325,15 +316,17 @@ export class DataPlatformIterableSource implements IIterableSource {
       return [];
     }
 
+    const streamByParams = this._importId
+      ? { importId: this._importId, start: time, end: time }
+      : { deviceId: this._deviceId!, start: time, end: time };
+
     const messages: MessageEvent<unknown>[] = [];
     for await (const block of streamMessages({
       api: this._consoleApi,
       parsedChannelsByTopic: this._parsedChannelsByTopic,
       signal: abortSignal,
       params: {
-        ...(this._importId ? { importId: this._importId } : { deviceId: this._deviceId! }),
-        start: time,
-        end: time,
+        ...streamByParams,
         topics,
         replayPolicy: "lastPerChannel",
         replayLookbackSeconds: 30 * 60,
