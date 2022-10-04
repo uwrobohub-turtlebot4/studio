@@ -253,11 +253,11 @@ export class DataPlatformIterableSource implements IIterableSource {
     let localStart = streamStart;
     let localEnd = clampTime(addTime(localStart, { sec: 5, nsec: 0 }), streamStart, streamEnd);
 
-    const streamByParams = importId
-      ? { importId, start: localStart, end: localEnd, topics: args.topics }
-      : { deviceId: deviceId!, start: localStart, end: localEnd, topics: args.topics };
-
     for (;;) {
+      const streamByParams = importId
+        ? { importId, start: localStart, end: localEnd, topics: args.topics }
+        : { deviceId: deviceId!, start: localStart, end: localEnd, topics: args.topics };
+
       const stream = streamMessages({ api, parsedChannelsByTopic, params: streamByParams });
 
       for await (const messages of stream) {
