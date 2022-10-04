@@ -190,6 +190,11 @@ export class SceneExtension<
       const frameLocked = renderable.userData.settings.frameLocked ?? true;
       const srcTime = frameLocked ? currentTime : renderable.userData.messageTime;
       const frameId = renderable.userData.frameId;
+
+      if (!frameId) {
+        continue;
+      }
+
       const updated = updatePose(
         renderable,
         this.renderer.transformTree,
