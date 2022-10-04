@@ -239,7 +239,7 @@ export class DataPlatformIterableSource implements IIterableSource {
         api,
         parsedChannelsByTopic,
         params: {
-          ...(deviceId ? { deviceId } : { importId: importId! }),
+          ...(importId ? { importId } : { deviceId: deviceId! }),
           start: streamStart,
           end: streamEnd,
           topics: args.topics,
@@ -262,7 +262,7 @@ export class DataPlatformIterableSource implements IIterableSource {
         api,
         parsedChannelsByTopic,
         params: {
-          ...(deviceId ? { deviceId } : { importId: importId! }),
+          ...(importId ? { importId } : { deviceId: deviceId! }),
           start: localStart,
           end: localEnd,
           topics: args.topics,
@@ -331,7 +331,7 @@ export class DataPlatformIterableSource implements IIterableSource {
       parsedChannelsByTopic: this._parsedChannelsByTopic,
       signal: abortSignal,
       params: {
-        ...(this._deviceId ? { deviceId: this._deviceId } : { importId: this._importId! }),
+        ...(this._importId ? { importId: this._importId } : { deviceId: this._deviceId! }),
         start: time,
         end: time,
         topics,
