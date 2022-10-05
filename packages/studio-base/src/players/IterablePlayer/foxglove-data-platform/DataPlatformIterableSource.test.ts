@@ -67,6 +67,7 @@ describe("DataPlatformIterableSource", () => {
 
     const source = new DataPlatformIterableSource({
       api: stubApi,
+      type: "by-device",
       deviceId: "device-id",
       start: { sec: 0, nsec: 0 },
       end: { sec: 40, nsec: 0 },

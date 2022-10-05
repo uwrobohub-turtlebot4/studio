@@ -112,8 +112,8 @@ export type ConsoleApiLayout = {
 };
 
 export type DataPlatformSourceParameters =
-  | { deviceId: string; start: Time; end: Time }
-  | { importId: string; start?: Time; end?: Time };
+  | { type: "by-device"; deviceId: string; start: Time; end: Time }
+  | { type: "by-import"; importId: string; start?: Time; end?: Time };
 
 export type DataPlatformSourceRequest =
   | { deviceId: string; start: string; end: string }

@@ -79,8 +79,8 @@ export async function* streamMessages({
   const startString = params.start ? toRFC3339String(params.start) : undefined;
   const endString = params.end ? toRFC3339String(params.end) : undefined;
 
-  const deviceId = "deviceId" in params ? params.deviceId : undefined;
-  const importId = "importId" in params ? params.importId : undefined;
+  const deviceId = params.type === "by-device" ? params.deviceId : undefined;
+  const importId = params.type === "by-import" ? params.importId : undefined;
 
   const streamParams = importId
     ? { importId, start: startString, end: endString }
