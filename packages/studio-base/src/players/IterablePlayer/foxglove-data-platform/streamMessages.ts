@@ -121,7 +121,11 @@ export async function* streamMessages({
   const schemasById = new Map<number, Mcap0Types.TypedMcapRecords["Schema"]>();
   const channelInfoById = new Map<
     number,
-    { channel: Mcap0Types.TypedMcapRecords["Channel"]; parsedChannel: ParsedChannel }
+    {
+      channel: Mcap0Types.TypedMcapRecords["Channel"];
+      parsedChannel: ParsedChannel;
+      schemaName: string;
+    }
   >();
 
   let totalMessages = 0;
@@ -158,7 +162,11 @@ export async function* streamMessages({
             info.schemaEncoding === schema.encoding &&
             isEqual(info.schema, schema.data)
           ) {
-            channelInfoById.set(record.id, { channel: record, parsedChannel: info.parsedChannel });
+            channelInfoById.set(record.id, {
+              channel: record,
+              parsedChannel: info.parsedChannel,
+              schemaName: schema.name,
+            });
             return;
           }
         }
@@ -179,7 +187,7 @@ export async function* streamMessages({
 
         parsedChannelsByTopic.set(record.topic, parsedChannels);
 
-        channelInfoById.set(record.id, { channel: record, parsedChannel });
+        channelInfoById.set(record.id, { channel: record, parsedChannel, schemaName: schema.name });
 
         const err = new Error(
           `No pre-initialized reader for ${record.topic} (message encoding ${record.messageEncoding}, schema encoding ${schema.encoding}, schema name ${schema.name})`,
@@ -200,6 +208,7 @@ export async function* streamMessages({
           receiveTime,
           message: info.parsedChannel.deserializer(record.data),
           sizeInBytes: record.data.byteLength,
+          datatype: info.schemaName,
         });
         return;
       }
