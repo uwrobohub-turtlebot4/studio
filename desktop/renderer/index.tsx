@@ -7,7 +7,6 @@
 
 import * as Sentry from "@sentry/electron/renderer";
 import { BrowserTracing } from "@sentry/tracing";
-import { StrictMode } from "react";
 import ReactDOM from "react-dom";
 
 import { Sockets } from "@foxglove/electron-socket/renderer";
@@ -82,9 +81,9 @@ async function main() {
   );
 
   ReactDOM.render(
-    <StrictMode>
-      <Root appConfiguration={appConfiguration} />
-    </StrictMode>,
+    // <StrictMode>
+    <Root appConfiguration={appConfiguration} />,
+    // </StrictMode>,
     rootEl,
     () => {
       // Integration tests look for this console log to indicate the app has rendered once

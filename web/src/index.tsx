@@ -4,7 +4,6 @@
 
 import * as Sentry from "@sentry/browser";
 import { BrowserTracing } from "@sentry/tracing";
-import { StrictMode } from "react";
 import ReactDOM from "react-dom";
 
 import Logger from "@foxglove/log";
@@ -66,7 +65,8 @@ async function main() {
   };
 
   if (!canRenderApp) {
-    ReactDOM.render(<StrictMode>{banner}</StrictMode>, rootEl, renderCallback);
+    // ReactDOM.render(<StrictMode>{banner}</StrictMode>, rootEl, renderCallback);
+    ReactDOM.render(banner, rootEl, renderCallback);
     return;
   }
 
@@ -87,10 +87,12 @@ async function main() {
   });
 
   ReactDOM.render(
-    <StrictMode>
+    // <StrictMode>
+    <>
       {banner}
       <Root appConfiguration={appConfiguration} />
-    </StrictMode>,
+    </>,
+    // </StrictMode>,
     rootEl,
     renderCallback,
   );
