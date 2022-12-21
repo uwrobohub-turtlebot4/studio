@@ -4,7 +4,7 @@
 
 import { expect } from "@storybook/jest";
 import { Story, StoryContext } from "@storybook/react";
-import { fireEvent, screen } from "@testing-library/dom";
+import { fireEvent, screen, waitFor } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import { useMemo } from "react";
 
@@ -93,7 +93,7 @@ async function deleteLayoutInteraction(index: number) {
   await userEvent.click(deleteButton);
   const confirmButton = await screen.findByText("Delete");
   await userEvent.click(confirmButton);
-  expect(confirmButton).not.toBeInTheDocument();
+  await waitFor(() => expect(confirmButton).not.toBeInTheDocument());
 }
 
 async function doMultiAction(action: string) {
@@ -206,7 +206,7 @@ MultiDelete.play = async () => {
 
   const confirmButton = await screen.findByText("Delete");
   await userEvent.click(confirmButton);
-  expect(confirmButton).not.toBeInTheDocument();
+  await waitFor(() => expect(confirmButton).not.toBeInTheDocument());
 };
 
 export function MultiDuplicate(): JSX.Element {
@@ -231,7 +231,7 @@ MultiRevert.play = async () => {
   await doMultiAction("Revert");
   const revertButton = await screen.findByText("Discard changes");
   await userEvent.click(revertButton);
-  expect(revertButton).not.toBeInTheDocument();
+  await waitFor(() => expect(revertButton).not.toBeInTheDocument());
 };
 
 export function MultiSave(): JSX.Element {
