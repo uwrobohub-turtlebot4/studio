@@ -13,6 +13,7 @@
 
 import { diff } from "jest-diff";
 import { isEqual } from "lodash";
+import "@testing-library/jest-dom";
 
 import {
   mockSendNotification,
