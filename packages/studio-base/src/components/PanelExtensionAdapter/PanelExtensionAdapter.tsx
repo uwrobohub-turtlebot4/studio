@@ -366,11 +366,12 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
         if (!isMounted()) {
           return;
         }
+        const watchAllFrames = watchedFields.has("allFrames");
         const subscribePayloads = topics.map<SubscribePayload>((item) => {
           if (typeof item === "string") {
             // For backwards compatability with the topic-string-array api `subscribe(["/topic"])`
             // results in a topic subscription with full preloading
-            return { topic: item, preloadType: "full" };
+            return { topic: item, preloadType: watchAllFrames ? "full" : "partial" };
           }
 
           return {
