@@ -12,15 +12,17 @@
 //   You may not use this file except in compliance with the License.
 
 import {
-  Pause20Filled,
-  Pause20Regular,
-  Play20Filled,
-  Play20Regular,
-  Next20Filled,
-  Next20Regular,
-  Previous20Filled,
-  Previous20Regular,
-} from "@fluentui/react-icons";
+  Pause as PauseFilledIcon,
+  Play as PlayFilledIcon,
+  Next as NextFilledIcon,
+  Previous as PreviousFilledIcon,
+} from "@emotion-icons/fluentui-system-filled";
+import {
+  Pause as PauseRegularIcon,
+  Play as PlayRegularIcon,
+  Next as NextRegularIcon,
+  Previous as PreviousRegularIcon,
+} from "@emotion-icons/fluentui-system-regular";
 import { useCallback, useMemo, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 
@@ -182,8 +184,8 @@ export default function PlaybackControls(props: {
               disabled={disableControls}
               size="small"
               title="Seek backward"
-              icon={<Previous20Regular />}
-              activeIcon={<Previous20Filled />}
+              icon={<PreviousRegularIcon />}
+              activeIcon={<PreviousFilledIcon />}
               onClick={() => seekBackwardAction()}
             />
             <HoverableIconButton
@@ -191,15 +193,15 @@ export default function PlaybackControls(props: {
               size="small"
               title={isPlaying ? "Pause" : "Play"}
               onClick={togglePlayPause}
-              icon={isPlaying ? <Pause20Regular /> : <Play20Regular />}
-              activeIcon={isPlaying ? <Pause20Filled /> : <Play20Filled />}
+              icon={isPlaying ? <PauseRegularIcon /> : <PlayRegularIcon />}
+              activeIcon={isPlaying ? <PauseFilledIcon /> : <PlayFilledIcon />}
             />
             <HoverableIconButton
               disabled={disableControls}
               size="small"
               title="Seek forward"
-              icon={<Next20Regular />}
-              activeIcon={<Next20Filled />}
+              icon={<NextRegularIcon />}
+              activeIcon={<NextFilledIcon />}
               onClick={() => seekForwardAction()}
             />
           </Stack>

@@ -12,12 +12,12 @@
 //   You may not use this file except in compliance with the License.
 
 import {
-  Delete20Regular,
-  FullScreenMaximize20Regular,
-  ShapeSubtract20Regular,
-  SplitHorizontal20Regular,
-  SplitVertical20Regular,
-} from "@fluentui/react-icons";
+  Delete as DeleteIcon,
+  FullScreenMaximize as FullScreenMaximizeIcon,
+  ShapeSubtract as ShapeSubtractIcon,
+  SplitHorizontal as SplitHorizontalIcon,
+  SplitVertical as SplitVerticalIcon,
+} from "@emotion-icons/fluentui-system-regular";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Divider, Menu, MenuItem } from "@mui/material";
@@ -149,13 +149,13 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
         {
           key: "hsplit",
           text: "Split horizontal",
-          icon: <SplitHorizontal20Regular />,
+          icon: <SplitHorizontalIcon />,
           onClick: () => split(panelContext?.id, "column"),
         },
         {
           key: "vsplit",
           text: "Split vertical",
-          icon: <SplitVertical20Regular />,
+          icon: <SplitVerticalIcon />,
           onClick: () => split(panelContext?.id, "row"),
         },
       );
@@ -165,7 +165,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
       items.push({
         key: "enter-fullscreen",
         text: "Fullscreen",
-        icon: <FullScreenMaximize20Regular />,
+        icon: <FullScreenMaximizeIcon />,
         onClick: enterFullscreen,
         "data-testid": "panel-menu-fullscreen",
       });
@@ -176,7 +176,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
     items.push({
       key: "remove",
       text: "Remove panel",
-      icon: <Delete20Regular />,
+      icon: <DeleteIcon />,
       onClick: close,
       "data-testid": "panel-menu-remove",
       className: classes.error,
@@ -234,7 +234,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
           onClick={handleSubmenuClick}
           onMouseEnter={handleSubmenuMouseEnter}
         >
-          <ShapeSubtract20Regular />
+          <ShapeSubtractIcon />
           Change panel
           <ChevronRightIcon className={classes.icon} fontSize="small" />
         </MenuItem>
