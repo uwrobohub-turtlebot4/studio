@@ -450,11 +450,42 @@ declare module "@foxglove/studio" {
     | "Walk"
     | "World";
 
-  /**
-   * A settings tree field specifies the input type and the value of a field
-   * in the settings editor.
-   */
-  export type SettingsTreeFieldValue =
+  type SettingsTreeVec3Value = {
+    input: "vec3";
+    value?: [undefined | number, undefined | number, undefined | number];
+    placeholder?: [undefined | string, undefined | string, undefined | string];
+    step?: number;
+    precision?: number;
+    labels?: [string, string, string];
+    max?: number;
+    min?: number;
+  };
+
+  type SettingsTreeVec2Value = {
+    input: "vec2";
+    value?: [undefined | number, undefined | number];
+    placeholder?: [undefined | string, undefined | string];
+    step?: number;
+    precision?: number;
+    labels?: [string, string];
+    max?: number;
+    min?: number;
+  };
+
+  type SettingsTreeNumericFieldValue = {
+    input: "number";
+    value?: number;
+    step?: number;
+    max?: number;
+    min?: number;
+    precision?: number;
+    /**
+     * Optional placeholder text displayed in the field input when value is undefined
+     */
+    placeholder?: string;
+  };
+
+  type NonNumericSettingsTreeFieldValue =
     | { input: "autocomplete"; value?: string; items: string[] }
     | { input: "boolean"; value?: boolean }
     | {
@@ -488,19 +519,6 @@ declare module "@foxglove/studio" {
     | { input: "gradient"; value?: [string, string] }
     | { input: "messagepath"; value?: string; validTypes?: string[] }
     | {
-        input: "number";
-        value?: number;
-        step?: number;
-        max?: number;
-        min?: number;
-        precision?: number;
-
-        /**
-         * Optional placeholder text displayed in the field input when value is undefined
-         */
-        placeholder?: string;
-      }
-    | {
         input: "select";
         value?: number | number[];
         options: Array<{ label: string; value: undefined | number }>;
@@ -523,27 +541,13 @@ declare module "@foxglove/studio" {
         input: "toggle";
         value?: string;
         options: string[] | Array<{ label: string; value: undefined | string }>;
-      }
-    | {
-        input: "vec3";
-        value?: [undefined | number, undefined | number, undefined | number];
-        placeholder?: [undefined | string, undefined | string, undefined | string];
-        step?: number;
-        precision?: number;
-        labels?: [string, string, string];
-        max?: number;
-        min?: number;
-      }
-    | {
-        input: "vec2";
-        value?: [undefined | number, undefined | number];
-        placeholder?: [undefined | string, undefined | string];
-        step?: number;
-        precision?: number;
-        labels?: [string, string];
-        max?: number;
-        min?: number;
       };
+
+  export type SettingsTreeFieldValue =
+    | NonNumericSettingsTreeFieldValue
+    | SettingsTreeNumericFieldValue
+    | SettingsTreeVec2Value
+    | SettingsTreeVec3Value;
 
   export type SettingsTreeField = SettingsTreeFieldValue & {
     /**
@@ -684,13 +688,29 @@ declare module "@foxglove/studio" {
    * Represents actions that can be dispatched to source of the SettingsTree to implement
    * edits and updates.
    */
+  export type SettingsTreeNumberInputInteraction = "direct" | "scrubbing";
+  export type SettingsTreeActionUpdatePayload = { path: readonly string[] } & (
+    | {
+        input: "number";
+        value?: number;
+        interaction: SettingsTreeNumberInputInteraction;
+      }
+    | {
+        input: "vec2";
+        value?: undefined | [undefined | number, undefined | number];
+        interaction: SettingsTreeNumberInputInteraction;
+      }
+    | {
+        input: "vec3";
+        value?: undefined | [undefined | number, undefined | number, undefined | number];
+        interaction: SettingsTreeNumberInputInteraction;
+      }
+    | DistributivePick<NonNumericSettingsTreeFieldValue, "input" | "value">
+  );
   export type SettingsTreeAction =
     | {
         action: "update";
-        payload: { path: readonly string[] } & DistributivePick<
-          SettingsTreeFieldValue,
-          "input" | "value"
-        >;
+        payload: SettingsTreeActionUpdatePayload;
       }
     | {
         action: "perform-node-action";

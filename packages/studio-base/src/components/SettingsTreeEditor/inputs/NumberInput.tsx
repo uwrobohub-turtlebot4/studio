@@ -57,6 +57,8 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+type Interaction = "direct" | "scrubbing";
+
 export function NumberInput(
   props: {
     iconUp?: ReactNode;
@@ -67,7 +69,7 @@ export function NumberInput(
     readOnly?: boolean;
     step?: number;
     value?: number;
-    onChange: (value: undefined | number) => void;
+    onChange: (value: undefined | number, interaction: Interaction) => void;
   } & Omit<TextFieldProps, "onChange">,
 ): JSX.Element {
   const { classes, cx } = useStyles();
@@ -96,7 +98,7 @@ export function NumberInput(
     : undefined;
 
   const updateValue = useCallback(
-    (newValue: undefined | number) => {
+    (newValue: undefined | number, interaction: Interaction) => {
       if (disabled === true || readOnly === true) {
         return;
       }
@@ -105,7 +107,7 @@ export function NumberInput(
         newValue == undefined
           ? undefined
           : clamp(newValue, min ?? Number.NEGATIVE_INFINITY, max ?? Number.POSITIVE_INFINITY);
-      onChange(clampedValue);
+      onChange(clampedValue, interaction);
     },
     [disabled, readOnly, min, max, onChange],
   );
@@ -136,7 +138,7 @@ export function NumberInput(
           step *
           scale;
         scrubValue.current += delta;
-        updateValue(scrubValue.current);
+        updateValue(scrubValue.current, "scrubbing");
       }
     },
     [step, updateValue],
@@ -150,7 +152,10 @@ export function NumberInput(
       {...props}
       value={displayValue ?? ""}
       onChange={(event) =>
-        updateValue(event.target.value.length > 0 ? Number(event.target.value) : undefined)
+        updateValue(
+          event.target.value.length > 0 ? Number(event.target.value) : undefined,
+          "direct",
+        )
       }
       type="number"
       className={cx(classes.textField, { [classes.textFieldReadonly]: readOnly })}
@@ -170,7 +175,10 @@ export function NumberInput(
             edge="start"
             tabIndex={-1} // Disable tabbing to the step buttons.
             onClick={(event: React.MouseEvent) =>
-              updateValue((value ?? placeHolderValue ?? 0) - (event.shiftKey ? step * 10 : step))
+              updateValue(
+                (value ?? placeHolderValue ?? 0) - (event.shiftKey ? step * 10 : step),
+                "direct",
+              )
             }
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
@@ -183,7 +191,10 @@ export function NumberInput(
             edge="end"
             tabIndex={-1} // Disable tabbing to the step buttons.
             onClick={(event: React.MouseEvent) =>
-              updateValue((value ?? placeHolderValue ?? 0) + (event.shiftKey ? step * 10 : step))
+              updateValue(
+                (value ?? placeHolderValue ?? 0) + (event.shiftKey ? step * 10 : step),
+                "direct",
+              )
             }
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}

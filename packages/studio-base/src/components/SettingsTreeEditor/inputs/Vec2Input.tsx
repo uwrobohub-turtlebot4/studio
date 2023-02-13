@@ -4,13 +4,17 @@
 
 import { useCallback } from "react";
 
+import { SettingsTreeNumberInputInteraction } from "@foxglove/studio";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { NumberInput } from "./NumberInput";
 
 type Vec2Props = {
   disabled?: boolean;
-  onChange: (value: undefined | [undefined | number, undefined | number]) => void;
+  onChange: (
+    value: undefined | [undefined | number, undefined | number],
+    interaction: SettingsTreeNumberInputInteraction,
+  ) => void;
   precision?: number;
   readOnly?: boolean;
   step?: number;
@@ -34,10 +38,14 @@ export function Vec2Input(props: Vec2Props): JSX.Element {
   } = props;
 
   const onChangeCallback = useCallback(
-    (position: number, inputValue: undefined | number) => {
+    (
+      position: number,
+      inputValue: undefined | number,
+      interaction: SettingsTreeNumberInputInteraction,
+    ) => {
       const newValue: [undefined | number, undefined | number] = [...(value ?? [0, 0])];
       newValue[position] = inputValue;
-      onChange(newValue);
+      onChange(newValue, interaction);
     },
     [onChange, value],
   );
@@ -56,7 +64,7 @@ export function Vec2Input(props: Vec2Props): JSX.Element {
         value={value?.[0]}
         min={min}
         max={max}
-        onChange={(newValue) => onChangeCallback(0, newValue)}
+        onChange={(newValue, interaction) => onChangeCallback(0, newValue, interaction)}
       />
       <NumberInput
         size="small"
@@ -70,7 +78,7 @@ export function Vec2Input(props: Vec2Props): JSX.Element {
         value={value?.[1]}
         min={min}
         max={max}
-        onChange={(newValue) => onChangeCallback(1, newValue)}
+        onChange={(newValue, interaction) => onChangeCallback(1, newValue, interaction)}
       />
     </Stack>
   );

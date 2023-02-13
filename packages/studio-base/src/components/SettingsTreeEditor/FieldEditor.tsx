@@ -169,8 +169,11 @@ function FieldInput({
           min={field.min}
           precision={field.precision}
           step={field.step}
-          onChange={(value) =>
-            actionHandler({ action: "update", payload: { path, input: "number", value } })
+          onChange={(value, interaction) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "number", value, interaction },
+            })
           }
         />
       );
@@ -360,8 +363,11 @@ function FieldInput({
           readOnly={field.readonly}
           min={field.min}
           max={field.max}
-          onChange={(value) =>
-            actionHandler({ action: "update", payload: { path, input: "vec3", value } })
+          onChange={(value, interaction) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "vec3", value, interaction },
+            })
           }
         />
       );
@@ -376,8 +382,11 @@ function FieldInput({
           readOnly={field.readonly}
           min={field.min}
           max={field.max}
-          onChange={(value) =>
-            actionHandler({ action: "update", payload: { path, input: "vec2", value } })
+          onChange={(value, interaction) =>
+            actionHandler({
+              action: "update",
+              payload: { path, input: "vec2", value, interaction },
+            })
           }
         />
       );

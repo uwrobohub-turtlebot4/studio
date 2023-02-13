@@ -74,6 +74,8 @@ type Shared3DPanelState = {
 
 const SHOW_DEBUG: true | false = false;
 
+const SETTINGS_DEBOUNCE_MS = 100;
+
 const PANEL_STYLE: React.CSSProperties = {
   width: "100%",
   height: "100%",
@@ -86,6 +88,16 @@ const PublishClickIcons: Record<PublishClickType, React.ReactNode> = {
   point: <PublishPointIcon fontSize="inherit" />,
   pose_estimate: <PublishPoseEstimateIcon fontSize="inherit" />,
 };
+
+function settingsActionIsScrubbing(action: SettingsTreeAction) {
+  return (
+    action.action === "update" &&
+    (action.payload.input === "number" ||
+      action.payload.input === "vec2" ||
+      action.payload.input === "vec3") &&
+    action.payload.interaction === "scrubbing"
+  );
+}
 
 /**
  * Provides DOM overlay elements on top of the 3D scene (e.g. stats, debug GUI).
@@ -463,6 +475,15 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
     return () => void renderer?.removeListener("cameraMove", listener);
   }, [config.scene.syncCamera, context, effectiveRendererFrameId, renderer]);
 
+  // Maintain the settings tree
+  const [settingsTree, setSettingsTree] = useState<SettingsTreeNodes | undefined>(undefined);
+  const debouncedUpdateSettingsTree = useDebouncedCallback(
+    (curRenderer: Renderer) => setSettingsTree(curRenderer.settings.tree()),
+    SETTINGS_DEBOUNCE_MS,
+    { leading: true, trailing: true, maxWait: SETTINGS_DEBOUNCE_MS },
+  );
+  useRendererEvent("settingsTreeChange", debouncedUpdateSettingsTree, renderer);
+
   // Handle user changes in the settings sidebar
   const actionHandler = useCallback(
     (action: SettingsTreeAction) =>
@@ -475,6 +496,7 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
           const initialCameraState = renderer.getCameraState();
           renderer.settings.handleAction(action);
           const updatedCameraState = renderer.getCameraState();
+
           // Communicate camera changes from settings to the global state if syncing.
           if (updatedCameraState !== initialCameraState && config.scene.syncCamera === true) {
             context.setSharedPanelState({
@@ -483,18 +505,16 @@ export function ThreeDeeRender({ context }: { context: PanelExtensionContext }):
               followTf: renderer.followFrameId,
             });
           }
+
+          // For updates other than number input scrubbing, which happen at high frequency,
+          // update the settings tree immediately.
+          if (!settingsActionIsScrubbing(action)) {
+            debouncedUpdateSettingsTree.flush();
+          }
         }
       }),
-    [config.scene.syncCamera, context, renderer],
+    [config.scene.syncCamera, context, debouncedUpdateSettingsTree, renderer],
   );
-
-  // Maintain the settings tree
-  const [settingsTree, setSettingsTree] = useState<SettingsTreeNodes | undefined>(undefined);
-  const updateSettingsTree = useCallback(
-    (curRenderer: Renderer) => setSettingsTree(curRenderer.settings.tree()),
-    [],
-  );
-  useRendererEvent("settingsTreeChange", updateSettingsTree, renderer);
 
   // Save the panel configuration when it changes
   const updateConfig = useCallback((curRenderer: Renderer) => setConfig(curRenderer.config), []);
