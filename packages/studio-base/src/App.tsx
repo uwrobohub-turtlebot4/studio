@@ -7,6 +7,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
+import { useAppModule } from "@foxglove/studio-base/context/AppModuleContext";
 import EventsProvider from "@foxglove/studio-base/providers/EventsProvider";
 import { StudioLogsSettingsProvider } from "@foxglove/studio-base/providers/StudioLogsSettingsProvider";
 import TimelineInteractionStateProvider from "@foxglove/studio-base/providers/TimelineInteractionStateProvider";
@@ -73,8 +74,6 @@ function contextMenuHandler(event: MouseEvent) {
 }
 
 export function App(props: AppProps): JSX.Element {
-  const [assetLoaders] = useState(() => [new URDFAssetLoader()]);
-
   const {
     appConfiguration,
     dataSources,
@@ -90,32 +89,51 @@ export function App(props: AppProps): JSX.Element {
     enableGlobalCss = false,
   } = props;
 
+  const [assetLoaders] = useState(() => [new URDFAssetLoader()]);
+  const appModule = useAppModule();
+
   const CurrentUserProviderComponent =
     enableDialogAuth === true
       ? ConsoleApiDialogCurrentUserProvider
       : ConsoleApiCookieCurrentUserProvider;
 
-  const providers = [
-    /* eslint-disable react/jsx-key */
-    <StudioLogsSettingsProvider />,
-    <ConsoleApiContext.Provider value={consoleApi} />,
-    <CurrentUserProviderComponent />,
-    <ConsoleApiRemoteLayoutStorageProvider />,
-    <StudioToastProvider />,
-    <LayoutStorageContext.Provider value={layoutStorage} />,
-    <UserProfileLocalStorageProvider />,
-    <AnalyticsProvider amplitudeApiKey={process.env.AMPLITUDE_API_KEY} />,
-    <LayoutManagerProvider />,
-    <AssetsProvider loaders={assetLoaders} />,
-    <TimelineInteractionStateProvider />,
-    <UserNodeStateProvider />,
-    <CurrentLayoutProvider />,
-    <ExtensionMarketplaceProvider />,
-    <ExtensionCatalogProvider loaders={extensionLoaders} />,
-    <PlayerManager playerSources={dataSources} />,
-    <EventsProvider />,
-    /* eslint-enable react/jsx-key */
-  ];
+  // eslint-disable-next-line react/jsx-key
+  const providers: JSX.Element[] = [<StudioLogsSettingsProvider />];
+
+  // If there are app providers, those take precedence over the built-in providers
+  if (appModule.providers) {
+    providers.push(...appModule.providers);
+  } else {
+    providers.push(
+      ...[
+        /* eslint-disable react/jsx-key */
+        <ConsoleApiContext.Provider value={consoleApi} />,
+        <CurrentUserProviderComponent />,
+        <ConsoleApiRemoteLayoutStorageProvider />,
+        /* eslint-enable react/jsx-key */
+      ],
+    );
+  }
+
+  providers.push(
+    ...[
+      /* eslint-disable react/jsx-key */
+      <StudioToastProvider />,
+      <LayoutStorageContext.Provider value={layoutStorage} />,
+      <UserProfileLocalStorageProvider />,
+      <AnalyticsProvider amplitudeApiKey={process.env.AMPLITUDE_API_KEY} />,
+      <LayoutManagerProvider />,
+      <AssetsProvider loaders={assetLoaders} />,
+      <TimelineInteractionStateProvider />,
+      <UserNodeStateProvider />,
+      <CurrentLayoutProvider />,
+      <ExtensionMarketplaceProvider />,
+      <ExtensionCatalogProvider loaders={extensionLoaders} />,
+      <PlayerManager playerSources={dataSources} />,
+      <EventsProvider />,
+      /* eslint-enable react/jsx-key */
+    ],
+  );
 
   if (nativeAppMenu) {
     providers.push(<NativeAppMenuContext.Provider value={nativeAppMenu} />);

@@ -33,6 +33,7 @@ import {
   useMessagePipeline,
 } from "@foxglove/studio-base/components/MessagePipeline";
 import Stack from "@foxglove/studio-base/components/Stack";
+import { useAppModule } from "@foxglove/studio-base/context/AppModuleContext";
 import { useConsoleApi } from "@foxglove/studio-base/context/ConsoleApiContext";
 import { EventsStore, useEvents } from "@foxglove/studio-base/context/EventsContext";
 import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
@@ -124,6 +125,7 @@ export function CreateEventDialog(props: { deviceId: string; onClose: () => void
   );
 
   const { formatTime } = useAppTimeFormat();
+  const { createEvent: appModuleCreateEvent } = useAppModule();
 
   const countedMetadata = countBy(event.metadataEntries, (kv) => kv.key);
   const duplicateKey = Object.entries(countedMetadata).find(
@@ -142,19 +144,33 @@ export function CreateEventDialog(props: { deviceId: string; onClose: () => void
     const keyedMetadata = Object.fromEntries(
       filteredMeta.map((entry) => [entry.key.trim(), entry.value.trim()]),
     );
-    await consoleApi.createEvent({
-      deviceId,
-      timestamp: event.startTime.toISOString(),
-      durationNanos: toNanoSec(
-        event.durationUnit === "sec"
-          ? { sec: event.duration, nsec: 0 }
-          : { sec: 0, nsec: event.duration },
-      ).toString(),
-      metadata: keyedMetadata,
-    });
+
+    if (appModuleCreateEvent) {
+      await appModuleCreateEvent({
+        deviceId,
+        timestamp: event.startTime.toISOString(),
+        durationNanos: toNanoSec(
+          event.durationUnit === "sec"
+            ? { sec: event.duration, nsec: 0 }
+            : { sec: 0, nsec: event.duration },
+        ).toString(),
+        metadata: keyedMetadata,
+      });
+    } else {
+      await consoleApi.createEvent({
+        deviceId,
+        timestamp: event.startTime.toISOString(),
+        durationNanos: toNanoSec(
+          event.durationUnit === "sec"
+            ? { sec: event.duration, nsec: 0 }
+            : { sec: 0, nsec: event.duration },
+        ).toString(),
+        metadata: keyedMetadata,
+      });
+    }
     onClose();
     refreshEvents();
-  }, [consoleApi, deviceId, event, onClose, refreshEvents]);
+  }, [appModuleCreateEvent, consoleApi, deviceId, event, onClose, refreshEvents]);
 
   const onMetaDataKeyDown = useCallback(
     (keyboardEvent: KeyboardEvent) => {
