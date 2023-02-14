@@ -62,6 +62,11 @@ export function UserMenu({
 
   const beginSignOut = useCallback(async () => {
     try {
+      // There are checks in the parent component that should prevent showing this to users if there
+      // is no user context available. We assert here to detect miss-use.
+      if (!signOut) {
+        throw new Error("Invariant: CurrentUserProvider must provider signOut");
+      }
       await signOut();
     } catch (error) {
       log.error(error);

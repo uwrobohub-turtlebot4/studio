@@ -33,6 +33,14 @@ export default function AccountInfo(props: { currentUser?: User }): JSX.Element 
 
   const [{ loading }, beginSignOut] = useAsyncFn(async () => {
     try {
+      // <AccountInfo> should not be shown unless there is a provider for signOut
+      // There are checks higher in the component tree which should prevent this so we keep this as an invariant
+      if (!signOut) {
+        throw new Error(
+          "Invariant: CurrentUserProvider required to use the <AccountInfo> component",
+        );
+      }
+
       await signOut();
     } catch (error) {
       log.error(error);
