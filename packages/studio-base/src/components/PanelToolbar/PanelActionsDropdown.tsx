@@ -12,7 +12,6 @@
 //   You may not use this file except in compliance with the License.
 
 import {
-  Delete as DeleteIcon,
   FullScreenMaximize as FullScreenMaximizeIcon,
   ShapeSubtract as ShapeSubtractIcon,
   SplitHorizontal as SplitHorizontalIcon,
@@ -25,6 +24,7 @@ import { MouseEvent, useCallback, useContext, useMemo, useRef, useState } from "
 import { MosaicContext, MosaicNode, MosaicWindowContext } from "react-mosaic-component";
 import { makeStyles } from "tss-react/mui";
 
+import DeleteIcon from "@foxglove/studio-base/assets/delete.svg";
 import PanelContext from "@foxglove/studio-base/components/PanelContext";
 import ChangePanelMenu from "@foxglove/studio-base/components/PanelToolbar/ChangePanelMenu";
 import ToolbarIconButton from "@foxglove/studio-base/components/PanelToolbar/ToolbarIconButton";
@@ -45,11 +45,6 @@ const useStyles = makeStyles()((theme) => ({
   icon: {
     height: 18,
     width: 18,
-  },
-  deleteIcon: {
-    height: 22,
-    width: 22,
-    margin: -2,
   },
   menuItem: {
     display: "flex",
@@ -187,7 +182,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
     items.push({
       key: "remove",
       text: "Remove panel",
-      icon: <DeleteIcon className={classes.deleteIcon} />,
+      icon: <DeleteIcon className={classes.icon} />,
       onClick: close,
       "data-testid": "panel-menu-remove",
       className: classes.error,
@@ -195,7 +190,6 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
 
     return items;
   }, [
-    classes.deleteIcon,
     classes.error,
     classes.icon,
     close,

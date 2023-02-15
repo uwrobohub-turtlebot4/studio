@@ -8,7 +8,6 @@ import {
   BarcodeScanner,
   BookStar,
   BracesVariable,
-  Delete,
   Dismiss,
   DismissCircle,
   Document,
@@ -17,7 +16,6 @@ import {
   Flow,
   Settings,
   SlideAdd,
-  SlideLayout,
   TextBulletListTree,
 } from "@emotion-icons/fluentui-system-regular";
 
@@ -27,6 +25,7 @@ import RosIcon from "@foxglove/studio-base/components/RosIcon";
 import { RegisteredIconNames } from "@foxglove/studio-base/types/Icons";
 
 import DatabaseSettings from "../assets/database-settings.svg";
+import Delete from "../assets/delete.svg";
 import PanelLayout from "../assets/panel-layout.svg";
 import PanelSettings from "../assets/panel-settings.svg";
 
