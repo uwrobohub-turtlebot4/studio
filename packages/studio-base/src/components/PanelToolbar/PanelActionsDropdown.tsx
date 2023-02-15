@@ -43,8 +43,8 @@ const useStyles = makeStyles()((theme) => ({
     marginRight: theme.spacing(-1),
   },
   icon: {
-    height: 20,
-    width: 20,
+    height: 19,
+    width: 19,
   },
   menuItem: {
     display: "flex",
