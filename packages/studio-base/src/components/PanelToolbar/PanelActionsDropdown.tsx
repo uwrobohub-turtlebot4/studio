@@ -44,7 +44,7 @@ const useStyles = makeStyles()((theme) => ({
   },
   icon: {
     height: 20,
-    width: "auto",
+    width: 20,
   },
   menuItem: {
     display: "flex",
