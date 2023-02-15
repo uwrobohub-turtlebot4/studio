@@ -36,9 +36,15 @@ type Props = {
 };
 
 const useStyles = makeStyles()((theme) => ({
-  error: { color: theme.palette.error.main },
-  icon: {
+  error: {
+    color: theme.palette.error.main,
+  },
+  chevronRight: {
     marginRight: theme.spacing(-1),
+  },
+  icon: {
+    height: 20,
+    width: "auto",
   },
   menuItem: {
     display: "flex",
@@ -149,13 +155,13 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
         {
           key: "hsplit",
           text: "Split horizontal",
-          icon: <SplitHorizontalIcon />,
+          icon: <SplitHorizontalIcon className={classes.icon} />,
           onClick: () => split(panelContext?.id, "column"),
         },
         {
           key: "vsplit",
           text: "Split vertical",
-          icon: <SplitVerticalIcon />,
+          icon: <SplitVerticalIcon className={classes.icon} />,
           onClick: () => split(panelContext?.id, "row"),
         },
       );
@@ -165,7 +171,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
       items.push({
         key: "enter-fullscreen",
         text: "Fullscreen",
-        icon: <FullScreenMaximizeIcon />,
+        icon: <FullScreenMaximizeIcon className={classes.icon} />,
         onClick: enterFullscreen,
         "data-testid": "panel-menu-fullscreen",
       });
@@ -176,7 +182,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
     items.push({
       key: "remove",
       text: "Remove panel",
-      icon: <DeleteIcon />,
+      icon: <DeleteIcon className={classes.icon} />,
       onClick: close,
       "data-testid": "panel-menu-remove",
       className: classes.error,
@@ -185,6 +191,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
     return items;
   }, [
     classes.error,
+    classes.icon,
     close,
     enterFullscreen,
     isUnknownPanel,
@@ -234,9 +241,9 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
           onClick={handleSubmenuClick}
           onMouseEnter={handleSubmenuMouseEnter}
         >
-          <ShapeSubtractIcon />
+          <ShapeSubtractIcon className={classes.icon} />
           Change panel
-          <ChevronRightIcon className={classes.icon} fontSize="small" />
+          <ChevronRightIcon className={classes.chevronRight} fontSize="small" />
         </MenuItem>
         <ChangePanelMenu anchorEl={subMenuAnchorEl} onClose={handleSubmenuClose} tabId={tabId} />
         <Divider variant="middle" />
