@@ -43,8 +43,13 @@ const useStyles = makeStyles()((theme) => ({
     marginRight: theme.spacing(-1),
   },
   icon: {
-    height: 20,
-    width: 20,
+    height: 18,
+    width: 18,
+  },
+  deleteIcon: {
+    height: 22,
+    width: 22,
+    margin: -2,
   },
   menuItem: {
     display: "flex",
@@ -182,7 +187,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
     items.push({
       key: "remove",
       text: "Remove panel",
-      icon: <DeleteIcon className={classes.icon} />,
+      icon: <DeleteIcon className={classes.deleteIcon} />,
       onClick: close,
       "data-testid": "panel-menu-remove",
       className: classes.error,
@@ -190,6 +195,7 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
 
     return items;
   }, [
+    classes.deleteIcon,
     classes.error,
     classes.icon,
     close,
