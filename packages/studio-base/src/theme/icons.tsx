@@ -27,6 +27,7 @@ import RosIcon from "@foxglove/studio-base/components/RosIcon";
 import { RegisteredIconNames } from "@foxglove/studio-base/types/Icons";
 
 import DatabaseSettings from "../assets/database-settings.svg";
+import PanelLayout from "../assets/panel-layout.svg";
 import PanelSettings from "../assets/panel-settings.svg";
 
 const icons: {
@@ -45,7 +46,7 @@ const icons: {
   Edit: <Edit />,
   ErrorBadge: <DismissCircle />,
   FileASPX: <DocumentLink />,
-  FiveTileGrid: <SlideLayout />,
+  FiveTileGrid: <PanelLayout />,
   Flow: <Flow />,
   GenericScan: <BarcodeScanner />,
   OpenFile: <Document />,
