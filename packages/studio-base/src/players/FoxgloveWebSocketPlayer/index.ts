@@ -2,13 +2,13 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { parseChannel, ParsedChannel } from "@mcap/support";
 import * as base64 from "@protobufjs/base64";
 import { isEqual } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 
 import { debouncePromise } from "@foxglove/den/async";
 import Log from "@foxglove/log";
-import { parseChannel, ParsedChannel } from "@foxglove/mcap-support";
 import { MessageDefinition } from "@foxglove/message-definition";
 import CommonRosTypes from "@foxglove/rosmsg-msgs-common";
 import { MessageWriter as Ros1MessageWriter } from "@foxglove/rosmsg-serialization";

@@ -2221,28 +2221,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@foxglove/mcap-support@workspace:*, @foxglove/mcap-support@workspace:packages/mcap-support":
-  version: 0.0.0-use.local
-  resolution: "@foxglove/mcap-support@workspace:packages/mcap-support"
-  dependencies:
-    "@foxglove/message-definition": 0.2.0
-    "@foxglove/rosmsg": 4.0.0
-    "@foxglove/rosmsg-serialization": 2.0.0
-    "@foxglove/rosmsg2-serialization": 2.0.0
-    "@foxglove/schemas": 1.1.0
-    "@foxglove/wasm-bz2": 0.1.1
-    "@foxglove/wasm-lz4": 1.0.2
-    "@foxglove/wasm-zstd": 1.0.1
-    "@mcap/core": 1.1.0
-    "@protobufjs/base64": 1.1.2
-    "@types/protobufjs": "workspace:*"
-    flatbuffers: 23.1.21
-    flatbuffers_reflection: 0.0.3
-    protobufjs: 7.2.2
-    typescript: 4.9.5
-  languageName: unknown
-  linkType: soft
-
 "@foxglove/message-definition@npm:0.2.0, @foxglove/message-definition@npm:^0.2.0":
   version: 0.2.0
   resolution: "@foxglove/message-definition@npm:0.2.0"
@@ -2433,7 +2411,6 @@ __metadata:
     "@foxglove/electron-socket": 2.1.0
     "@foxglove/hooks": "workspace:*"
     "@foxglove/log": "workspace:*"
-    "@foxglove/mcap-support": "workspace:*"
     "@foxglove/message-definition": 0.2.0
     "@foxglove/ros1": 2.0.0
     "@foxglove/ros2": 4.0.0
@@ -2457,6 +2434,7 @@ __metadata:
     "@foxglove/ws-protocol": 0.5.0
     "@foxglove/xmlrpc": 1.3.0
     "@mcap/core": 1.1.0
+    "@mcap/support": 0.1.0
     "@mui/icons-material": 5.11.0
     "@mui/material": 5.11.10
     "@popperjs/core": 2.11.6
@@ -2650,7 +2628,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@foxglove/wasm-bz2@npm:0.1.1":
+"@foxglove/wasm-bz2@npm:0.1.1, @foxglove/wasm-bz2@npm:^0.1.1":
   version: 0.1.1
   resolution: "@foxglove/wasm-bz2@npm:0.1.1"
   dependencies:
@@ -2659,14 +2637,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@foxglove/wasm-lz4@npm:1.0.2":
+"@foxglove/wasm-lz4@npm:1.0.2, @foxglove/wasm-lz4@npm:^1.0.2":
   version: 1.0.2
   resolution: "@foxglove/wasm-lz4@npm:1.0.2"
   checksum: 1148ae84be22830382995ef19912dd033f009c0f16690dd942acce2efee02035b035f5910690c7e37c9435e7636b94006ef33220f86e98bc281129e50445bb19
   languageName: node
   linkType: hard
 
-"@foxglove/wasm-zstd@npm:1.0.1":
+"@foxglove/wasm-zstd@npm:^1.0.1":
   version: 1.0.1
   resolution: "@foxglove/wasm-zstd@npm:1.0.1"
   checksum: 91fffc0970e4dad0550e054ae1647730e09876ef0d6fb15c70d800e9027e38d8372e990dde98542a95eb00d88d483c9e1227be0ea958f9d3f41693dc78311027
@@ -3151,6 +3129,26 @@ __metadata:
     heap-js: ^2.1.6
     tslib: ^2
   checksum: a43ba5bc1c7083b40bc84629eb6815675c04c9d92fd71f2dbe1eee8a0fe5863a4bd69ee4e5a34a9a8848a16b20eb0271c739bcb46fa49b063533a612360adc06
+  languageName: node
+  linkType: hard
+
+"@mcap/support@npm:0.1.0":
+  version: 0.1.0
+  resolution: "@mcap/support@npm:0.1.0"
+  dependencies:
+    "@foxglove/message-definition": ^0.2.0
+    "@foxglove/rosmsg": ^4.0.0
+    "@foxglove/rosmsg-serialization": ^2.0.0
+    "@foxglove/rosmsg2-serialization": ^2.0.0
+    "@foxglove/schemas": ^1.1.0
+    "@foxglove/wasm-bz2": ^0.1.1
+    "@foxglove/wasm-lz4": ^1.0.2
+    "@foxglove/wasm-zstd": ^1.0.1
+    "@protobufjs/base64": ^1.1.2
+    flatbuffers: ^23.1.21
+    flatbuffers_reflection: ^0.0.3
+    protobufjs: ^7.2.2
+  checksum: 9e4f7fa82ca54a97fe362aef53d9a157b772410fe54224d177435f9e7e81eb082cb1a59607939b35e1a410f608b971753f348e9d3303c1e7daac8dcf456a9e29
   languageName: node
   linkType: hard
 
@@ -6619,7 +6617,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/protobufjs@workspace:*, @types/protobufjs@workspace:packages/@types/protobufjs":
+"@types/protobufjs@workspace:packages/@types/protobufjs":
   version: 0.0.0-use.local
   resolution: "@types/protobufjs@workspace:packages/@types/protobufjs"
   languageName: unknown
@@ -11223,11 +11221,11 @@ __metadata:
     "@actions/tool-cache": 2.0.1
     "@foxglove/electron-socket": 2.1.0
     "@foxglove/log": "workspace:*"
-    "@foxglove/mcap-support": "workspace:*"
     "@foxglove/rosbag": 0.3.0
     "@foxglove/rostime": 1.1.2
     "@foxglove/studio-base": "workspace:*"
     "@mcap/core": 1.1.0
+    "@mcap/support": 0.1.0
     "@pmmmwh/react-refresh-webpack-plugin": 0.5.10
     "@sentry/electron": 4.2.0
     "@sentry/tracing": 7.30.0
@@ -13343,14 +13341,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flatbuffers@npm:23.1.21":
+"flatbuffers@npm:^23.1.21":
   version: 23.1.21
   resolution: "flatbuffers@npm:23.1.21"
   checksum: 6e890adb8300e5352d579abf7c674eec7d838c27e82981c3d9cd5a4043ff83fc7097a88eae68729eb7cff6ded2b1a896ee2009632027d613040bef669290fbc6
   languageName: node
   linkType: hard
 
-"flatbuffers_reflection@npm:0.0.3":
+"flatbuffers_reflection@npm:^0.0.3":
   version: 0.0.3
   resolution: "flatbuffers_reflection@npm:0.0.3"
   checksum: bcef0af4ec41d6a21c9f6ae1df5be2e329c286d2ae566e09190ff585252b7ec6fbf79035c6ea255bc7c821851516b8bdcb5bf2f6c505e63a242e74c3fcd38cfe
@@ -20393,7 +20391,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:7.2.2":
+"protobufjs@npm:^7.2.2":
   version: 7.2.2
   resolution: "protobufjs@npm:7.2.2"
   dependencies:

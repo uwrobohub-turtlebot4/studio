@@ -3,9 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { McapStreamReader, hasMcapPrefix, McapConstants } from "@mcap/core";
+import { loadDecompressHandlers } from "@mcap/support";
 
 import Logger from "@foxglove/log";
-import { loadDecompressHandlers } from "@foxglove/mcap-support";
 
 import getIndexedMcapInfo from "./getIndexedMcapInfo";
 import getStreamedMcapInfo, { processMcapRecord } from "./getStreamedMcapInfo";

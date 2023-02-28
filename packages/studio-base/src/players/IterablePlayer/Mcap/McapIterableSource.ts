@@ -3,9 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { McapIndexedReader, McapTypes } from "@mcap/core";
+import { loadDecompressHandlers } from "@mcap/support";
 
 import Log from "@foxglove/log";
-import { loadDecompressHandlers } from "@foxglove/mcap-support";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 
 import { FileReadable } from "./FileReadable";

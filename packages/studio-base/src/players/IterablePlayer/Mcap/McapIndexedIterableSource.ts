@@ -3,9 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { McapIndexedReader, McapTypes } from "@mcap/core";
+import { ParsedChannel, parseChannel } from "@mcap/support";
 
 import Logger from "@foxglove/log";
-import { ParsedChannel, parseChannel } from "@foxglove/mcap-support";
 import { Time, fromNanoSec, toNanoSec, compare } from "@foxglove/rostime";
 import { MessageEvent } from "@foxglove/studio";
 import {

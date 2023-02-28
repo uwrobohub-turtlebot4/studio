@@ -3,9 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { McapStreamReader, McapTypes } from "@mcap/core";
+import { loadDecompressHandlers, parseChannel, ParsedChannel } from "@mcap/support";
 import { isEqual } from "lodash";
 
-import { loadDecompressHandlers, parseChannel, ParsedChannel } from "@foxglove/mcap-support";
 import {
   Time,
   isLessThan,

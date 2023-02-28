@@ -22,7 +22,7 @@ async function main(): Promise<void> {
       "--ignore",
       [
         String.raw`used in module`,
-        String.raw`^packages/(hooks|den|mcap|mcap-support)/`,
+        String.raw`^packages/(hooks|den|mcap)/`,
         String.raw`/studio/src/index\.ts`,
         String.raw`/studio-base/src/index\.ts`,
         String.raw`/studio-base/src/stories/`,
