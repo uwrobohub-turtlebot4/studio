@@ -48,12 +48,12 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
   return {
     MuiCssBaseline: {
       styleOverrides: {
-        "@global": {
-          svg: {
-            display: "block",
-            maxWidth: "100%",
-          },
-        },
+        // "@global": {
+        //   svg: {
+        //     display: "block",
+        //     maxWidth: "100%",
+        //   },
+        // },
       },
     },
     MuiAvatar: {
@@ -166,13 +166,13 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
           variant: "h3",
         },
       },
-      styleOverrides: {
-        action: {
-          alignSelf: undefined,
-          marginTop: undefined,
-          marginRight: undefined,
-        },
-      },
+      // styleOverrides: {
+      //   action: {
+      //     alignSelf: undefined,
+      //     marginTop: undefined,
+      //     marginRight: undefined,
+      //   },
+      // },
     },
     MuiCheckbox: {
       defaultProps: {
@@ -213,7 +213,7 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
           borderRadius: theme.shape.borderRadius,
 
           "&.Mui-focused": {
-            backgroundColor: theme.palette.action.focus,
+            // backgroundColor: theme.palette.action.focus,
           },
           "&.Mui-disabled": {
             opacity: 0.5,
@@ -232,11 +232,11 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
         },
       },
       styleOverrides: {
-        root: {
-          ".MuiBackdrop-root": {
-            backgroundColor: alpha(theme.palette.common.black, 0.4),
-          },
-        },
+        // root: {
+        //   ".MuiBackdrop-root": {
+        //     backgroundColor: alpha(theme.palette.common.black, 0.4),
+        //   },
+        // },
         paper: {
           // Prevent dialog from going underneath window title bar controls on Windows
           maxHeight: `calc(100% - 2 * (env(titlebar-area-height, ${theme.spacing(
@@ -247,20 +247,19 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
     },
     MuiDialogActions: {
       styleOverrides: {
-        root: {
-          padding: theme.spacing(3),
-        },
+        // root: {
+        //   padding: theme.spacing(3),
+        // },
       },
     },
     MuiDialogContent: {
       styleOverrides: {
-        root: {
-          ...theme.typography.body1,
-
-          "& + .MuiDialogActions-root": {
-            paddingTop: 0,
-          },
-        },
+        // root: {
+        //   ...theme.typography.body1,
+        //   "& + .MuiDialogActions-root": {
+        //     paddingTop: 0,
+        //   },
+        // },
       },
     },
     MuiDialogTitle: {
@@ -272,11 +271,11 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       },
     },
     MuiFocusVisible: {
-      styleOverrides: {
-        root: {
-          borderRadius: theme.shape.borderRadius,
-        },
-      },
+      // styleOverrides: {
+      //   root: {
+      //     borderRadius: theme.shape.borderRadius,
+      //   },
+      // },
     },
     MuiIconButton: {
       defaultProps: {
@@ -284,18 +283,17 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
         disableRipple: true,
       },
       styleOverrides: {
-        root: {
-          borderRadius: theme.shape.borderRadius,
-          ...iconHack,
-
-          ".root-span": {
-            display: "flex",
-          },
-          "&:hover": {
-            backgroundColor: theme.palette.action.hover,
-          },
-          ...disableBackgroundColorTransition,
-        },
+        // root: {
+        //   borderRadius: theme.shape.borderRadius,
+        //   ...iconHack,
+        //   ".root-span": {
+        //     display: "flex",
+        //   },
+        //   "&:hover": {
+        //     backgroundColor: theme.palette.action.hover,
+        //   },
+        //   ...disableBackgroundColorTransition,
+        // },
       },
     },
     MuiInput: {
@@ -359,6 +357,9 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       },
     },
     MuiListSubheader: {
+      defaultProps: {
+        disableSticky: true,
+      },
       styleOverrides: {
         root: {
           lineHeight: theme.spacing(4),
@@ -374,32 +375,32 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       },
     },
     MuiListItemText: {
-      styleOverrides: {
-        dense: {
-          marginTop: theme.spacing(0.25),
-          marginBottom: theme.spacing(0.25),
-        },
-      },
+      // styleOverrides: {
+      //   dense: {
+      //     marginTop: theme.spacing(0.25),
+      //     marginBottom: theme.spacing(0.25),
+      //   },
+      // },
     },
     MuiMenu: {
       defaultProps: {
         TransitionComponent: Fade,
       },
-      styleOverrides: {
-        paper: {
-          borderRadius: theme.shape.borderRadius,
-        },
-      },
+      // styleOverrides: {
+      //   paper: {
+      //     borderRadius: theme.shape.borderRadius,
+      //   },
+      // },
     },
     MuiMenuItem: {
       defaultProps: {
         disableRipple: true,
       },
-      styleOverrides: {
-        root: {
-          minHeight: 32,
-        },
-      },
+      // styleOverrides: {
+      //   root: {
+      //     minHeight: 32,
+      //   },
+      // },
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -438,9 +439,9 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
         square: true,
       },
       styleOverrides: {
-        elevation: {
-          backgroundImage: "none !important",
-        },
+        // elevation: {
+        //   backgroundImage: "none !important",
+        // },
       },
     },
     MuiRadio: {
@@ -453,16 +454,14 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       styleOverrides: {
         labelIcon: iconHack,
         root: {
-          opacity: 0.8,
-
-          "&.Mui-selected": {
-            opacity: 1,
-          },
-
-          "&:not(.Mui-selected):hover": {
-            opacity: 1,
-            color: theme.palette.text.primary,
-          },
+          // opacity: 0.8,
+          // "&.Mui-selected": {
+          //   opacity: 1,
+          // },
+          // "&:not(.Mui-selected):hover": {
+          //   opacity: 1,
+          //   color: theme.palette.text.primary,
+          // },
         },
         selected: {},
       },
@@ -488,48 +487,48 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       defaultProps: {
         disableRipple: true,
       },
-      styleOverrides: {
-        label: iconHack,
-        root: {
-          "&:active": {
-            backgroundColor: alpha(
-              theme.palette.text.primary,
-              theme.palette.action.activatedOpacity,
-            ),
-          },
-          "&.Mui-selected:active": {
-            backgroundColor: alpha(
-              theme.palette.primary.main,
-              theme.palette.action.selectedOpacity + theme.palette.action.activatedOpacity,
-            ),
-          },
-        },
-      },
+      // styleOverrides: {
+      //   label: iconHack,
+      //   root: {
+      //     "&:active": {
+      //       backgroundColor: alpha(
+      //         theme.palette.text.primary,
+      //         theme.palette.action.activatedOpacity,
+      //       ),
+      //     },
+      //     "&.Mui-selected:active": {
+      //       backgroundColor: alpha(
+      //         theme.palette.primary.main,
+      //         theme.palette.action.selectedOpacity + theme.palette.action.activatedOpacity,
+      //       ),
+      //     },
+      //   },
+      // },
     },
     MuiToolbar: {
-      styleOverrides: {
-        root: {
-          justifyContent: "space-between",
-        },
-      },
+      // styleOverrides: {
+      //   root: {
+      //     justifyContent: "space-between",
+      //   },
+      // },
     },
     MuiTooltip: {
       defaultProps: {
         arrow: true,
         TransitionComponent: Fade,
       },
-      styleOverrides: {
-        arrow: {
-          color: tinycolor(theme.palette.grey[700]).setAlpha(0.86).toRgbString(),
-          backdropFilter: "blur(3px)",
-        },
-        tooltip: {
-          backgroundColor: tinycolor(theme.palette.grey[700]).setAlpha(0.86).toRgbString(),
-          backdropFilter: "blur(3px)",
-          fontWeight: "normal",
-          fontSize: theme.typography.caption.fontSize,
-        },
-      },
+      // styleOverrides: {
+      //   arrow: {
+      //     color: tinycolor(theme.palette.grey[700]).setAlpha(0.86).toRgbString(),
+      //     backdropFilter: "blur(3px)",
+      //   },
+      //   tooltip: {
+      //     backgroundColor: tinycolor(theme.palette.grey[700]).setAlpha(0.86).toRgbString(),
+      //     backdropFilter: "blur(3px)",
+      //     fontWeight: "normal",
+      //     fontSize: theme.typography.caption.fontSize,
+      //   },
+      // },
     },
     MuiTypography: {
       defaultProps: {
