@@ -23,7 +23,7 @@ const makeSeriesNode = memoizeWeak((path: PlotPath, index: number): SettingsTree
         id: "delete-series",
         label: "Delete series",
         display: "inline",
-        icon: "Clear",
+        icon: "Delete",
       },
     ],
     label: plotPathDisplayName(path, index),
@@ -71,7 +71,7 @@ const makeRootSeriesNode = memoizeWeak((paths: PlotPath[]): SettingsTreeNode => 
         id: "add-series",
         label: "Add series",
         display: "inline",
-        icon: "Addchart",
+        icon: "AddChart",
       },
     ],
   };

@@ -27,13 +27,13 @@ import { useImmer } from "use-immer";
 
 import { filterMap } from "@foxglove/den/collection";
 import { SettingsTreeAction, SettingsTreeNode, SettingsTreeNodeActionItem } from "@foxglove/studio";
+import { BuiltinIcon } from "@foxglove/studio-base/components/BuiltinIcon";
 import { HighlightedText } from "@foxglove/studio-base/components/HighlightedText";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { FieldEditor } from "./FieldEditor";
 import { NodeActionsMenu } from "./NodeActionsMenu";
 import { VisibilityToggle } from "./VisibilityToggle";
-import { icons } from "./icons";
 import { prepareSettingsNodes } from "./utils";
 
 export type NodeEditorProps = {
@@ -49,7 +49,12 @@ export const NODE_HEADER_MIN_HEIGHT = 35;
 
 const useStyles = makeStyles()((theme) => ({
   actionButton: {
-    padding: theme.spacing(0.5),
+    padding: theme.spacing(0.75),
+    fontSize: theme.typography.pxToRem(18),
+
+    svg: {
+      fontSize: "1em !important",
+    },
   },
   editNameField: {
     font: "inherit",
@@ -85,7 +90,6 @@ const useStyles = makeStyles()((theme) => ({
     left: 0,
     transform: "translate(-97.5%, -50%)",
   },
-
   nodeHeader: {
     display: "flex",
     gridColumn: "span 2",
@@ -126,9 +130,9 @@ const useStyles = makeStyles()((theme) => ({
       },
     },
   },
-
   nodeHeaderToggle: {
     display: "grid",
+    gap: theme.spacing(0.5),
     alignItems: "center",
     gridTemplateColumns: "auto 1fr auto",
     opacity: 0.6,
@@ -280,8 +284,6 @@ function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
     ) : undefined;
   });
 
-  const IconComponent = settings.icon ? icons[settings.icon] : undefined;
-
   const onEditLabel = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       if (settings.renamable === true) {
@@ -347,16 +349,7 @@ function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
           onClick={toggleOpen}
         >
           {hasProperties && <ExpansionArrow expanded={state.open} />}
-          {IconComponent && (
-            <IconComponent
-              fontSize="small"
-              color="inherit"
-              style={{
-                marginRight: theme.spacing(0.5),
-                opacity: 0.8,
-              }}
-            />
-          )}
+          {settings.icon && <BuiltinIcon name={settings.icon} />}
           {state.editing ? (
             <TextField
               className={classes.editNameField}
@@ -421,20 +414,19 @@ function NodeEditorComponent(props: NodeEditorProps): JSX.Element {
             />
           )}
           {inlineActions.map((action) => {
-            const Icon = action.icon ? icons[action.icon] : undefined;
             const handler = () =>
               actionHandler({
                 action: "perform-node-action",
                 payload: { id: action.id, path: props.path },
               });
-            return Icon ? (
+            return action.icon ? (
               <IconButton
                 key={action.id}
                 onClick={handler}
                 title={action.label}
                 className={classes.actionButton}
               >
-                <Icon fontSize="small" />
+                <BuiltinIcon name={action.icon} />
               </IconButton>
             ) : (
               <Button

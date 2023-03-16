@@ -7,8 +7,7 @@ import { Menu, MenuItem, IconButton, ListItemIcon, ListItemText, Divider } from 
 import { useState } from "react";
 
 import { SettingsTreeNodeAction } from "@foxglove/studio";
-
-import { icons } from "./icons";
+import { BuiltinIcon } from "@foxglove/studio-base/components/BuiltinIcon";
 
 export function NodeActionsMenu({
   actions,
@@ -59,15 +58,14 @@ export function NodeActionsMenu({
               <Divider variant={anyItemHasIcon ? "inset" : "fullWidth"} key={`divider_${index}`} />
             );
           }
-          const Icon = action.icon ? icons[action.icon] : undefined;
           return (
             <MenuItem key={action.id} onClick={() => handleClose(action.id)}>
-              {Icon && (
+              {action.icon && (
                 <ListItemIcon>
-                  <Icon fontSize="small" />
+                  <BuiltinIcon name={action.icon} />
                 </ListItemIcon>
               )}
-              <ListItemText inset={!Icon && anyItemHasIcon}>{action.label}</ListItemText>
+              <ListItemText inset={!action.icon && anyItemHasIcon}>{action.label}</ListItemText>
             </MenuItem>
           );
         })}

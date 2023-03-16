@@ -423,7 +423,7 @@ export interface ExtensionModule {
 
 export type SettingsIcon =
   | "Add"
-  | "Addchart"
+  | "AddChart"
   | "Background"
   | "Camera"
   | "Cells"
