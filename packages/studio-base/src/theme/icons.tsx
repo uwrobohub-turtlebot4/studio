@@ -3,6 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import {
+  AddCircle24Filled,
   Add24Regular,
   AppsAddIn24Regular,
   BarcodeScanner24Regular,
@@ -72,6 +73,7 @@ const icons: {
   [N in RegisteredIconNames]: React.ReactElement;
 } = {
   Add: <Add24Regular />,
+  AddCircle: <AddCircle24Filled />,
   AddIn: <AppsAddIn24Regular />,
   BacklogList: <TextBulletListLtr24Regular />,
   Blockhead: <BlockheadIcon />,
@@ -92,7 +94,6 @@ const icons: {
   Settings: <Settings20Regular />,
   Variable2: <BracesVariable24Regular />,
   ROS: <GridDots24Filled />,
-  // Add,
   AddChart: <AddChart />,
   Background: <Background />,
   Camera: <Camera />,
@@ -103,7 +104,6 @@ const icons: {
   Clock: <Clock />,
   Collapse: <Collapse />,
   Cube: <Cube />,
-  // Delete: <Delete />,
   Expand: <Expand />,
   Flag: <Flag />,
   Folder: <Folder />,
@@ -121,7 +121,6 @@ const icons: {
   Points: <Points />,
   PrecisionManufacturing: <PrecisionManufacturing />,
   Radar: <Radar />,
-  // Settings: <Settings />,
   Shapes: <Shapes />,
   Share: <Share />,
   SouthEast: <SouthEast />,

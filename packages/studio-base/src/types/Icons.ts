@@ -4,6 +4,7 @@
 
 export type RegisteredIconNames =
   | "Add"
+  | "AddCircle"
   | "AddIn"
   | "BacklogList"
   | "Blockhead"

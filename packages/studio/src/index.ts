@@ -32,6 +32,66 @@ export interface Time {
   nsec: number;
 }
 
+export type RegisteredIconNames =
+  | "Add"
+  | "AddIn"
+  | "AddCircle"
+  | "BacklogList"
+  | "Blockhead"
+  | "BlockheadFilled"
+  | "BookStar"
+  | "Cancel"
+  | "DatabaseSettings"
+  | "Delete"
+  | "Edit"
+  | "ErrorBadge"
+  | "FileASPX"
+  | "FiveTileGrid"
+  | "Flow"
+  | "GenericScan"
+  | "OpenFile"
+  | "PanelSettings"
+  | "RectangularClipping"
+  | "Settings"
+  | "Variable2"
+  | "ROS"
+  | "AddChart"
+  | "Background"
+  | "Camera"
+  | "Cells"
+  | "Check"
+  | "Circle"
+  | "Clear"
+  | "Clock"
+  | "Collapse"
+  | "Cube"
+  | "Expand"
+  | "Flag"
+  | "Folder"
+  | "FolderOpen"
+  | "Grid"
+  | "Hive"
+  | "ImageProjection"
+  | "Map"
+  | "Move"
+  | "MoveDown"
+  | "MoveUp"
+  | "NorthWest"
+  | "Note"
+  | "NoteFilled"
+  | "Points"
+  | "PrecisionManufacturing"
+  | "Radar"
+  | "Shapes"
+  | "Share"
+  | "SouthEast"
+  | "Star"
+  | "Timeline"
+  | "Topic"
+  | "Walk"
+  | "World"
+  | never; // never has no effect here other than keeping the semicolon on a separate line for easier conflict resolution
+
 /**
  * A topic is a namespace for specific types of messages
  */
@@ -421,46 +481,6 @@ export interface ExtensionModule {
   activate: ExtensionActivate;
 }
 
-export type SettingsIcon =
-  | "Add"
-  | "AddChart"
-  | "Background"
-  | "Camera"
-  | "Cells"
-  | "Check"
-  | "Circle"
-  | "Clear"
-  | "Clock"
-  | "Collapse"
-  | "Cube"
-  | "Delete"
-  | "Expand"
-  | "Flag"
-  | "Folder"
-  | "FolderOpen"
-  | "Grid"
-  | "Hive"
-  | "ImageProjection"
-  | "Map"
-  | "Move"
-  | "MoveDown"
-  | "MoveUp"
-  | "NorthWest"
-  | "Note"
-  | "NoteFilled"
-  | "Points"
-  | "PrecisionManufacturing"
-  | "Radar"
-  | "Settings"
-  | "Shapes"
-  | "Share"
-  | "Star"
-  | "SouthEast"
-  | "Timeline"
-  | "Topic"
-  | "Walk"
-  | "World";
-
 /**
  * A settings tree field specifies the input type and the value of a field
  * in the settings editor.
@@ -603,7 +623,7 @@ export type SettingsTreeNodeActionItem = {
   /**
    * Optional icon to display with the action.
    */
-  icon?: SettingsIcon;
+  icon?: RegisteredIconNames;
 
   /**
    * Specifies whether the item is rendered as an inline action or as an item in the
@@ -649,7 +669,7 @@ export type SettingsTreeNode = {
   /**
    * Optional icon to display next to the node label.
    */
-  icon?: SettingsIcon;
+  icon?: RegisteredIconNames;
 
   /**
    * An optional label shown at the top of this node.

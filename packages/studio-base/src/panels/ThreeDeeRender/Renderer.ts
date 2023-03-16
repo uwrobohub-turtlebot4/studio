@@ -15,7 +15,7 @@ import type { FrameTransform, SceneUpdate } from "@foxglove/schemas";
 import {
   MessageEvent,
   ParameterValue,
-  SettingsIcon,
+  RegisteredIconNames,
   SettingsTreeAction,
   SettingsTreeNodeActionItem,
   SettingsTreeNodes,
@@ -618,7 +618,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
   public addCustomLayerAction(options: {
     layerId: string;
     label: string;
-    icon?: SettingsIcon;
+    icon?: RegisteredIconNames;
     handler: (instanceId: string) => void;
   }): void {
     const handler = options.handler;
