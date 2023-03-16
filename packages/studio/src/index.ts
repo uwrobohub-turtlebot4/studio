@@ -32,7 +32,7 @@ export interface Time {
   nsec: number;
 }
 
-export type RegisteredIconNames =
+export type SettingsIcon =
   | "Add"
   | "AddIn"
   | "AddCircle"
@@ -623,7 +623,7 @@ export type SettingsTreeNodeActionItem = {
   /**
    * Optional icon to display with the action.
    */
-  icon?: RegisteredIconNames;
+  icon?: SettingsIcon;
 
   /**
    * Specifies whether the item is rendered as an inline action or as an item in the
@@ -669,7 +669,7 @@ export type SettingsTreeNode = {
   /**
    * Optional icon to display next to the node label.
    */
-  icon?: RegisteredIconNames;
+  icon?: SettingsIcon;
 
   /**
    * An optional label shown at the top of this node.
