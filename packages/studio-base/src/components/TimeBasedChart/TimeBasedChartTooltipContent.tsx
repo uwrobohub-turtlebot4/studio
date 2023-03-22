@@ -40,7 +40,11 @@ const useStyles = makeStyles()((theme) => ({
     fontStyle: "italic",
   },
   path: {
-    opacity: 0.9,
+    mixBlendMode: "screen",
+    filter:
+      theme.palette.mode === "dark"
+        ? "saturate(200%) brightness(175%)"
+        : "saturate(200%) brightness(150%) contrast(150%)",
     whiteSpace: "nowrap",
   },
 }));
