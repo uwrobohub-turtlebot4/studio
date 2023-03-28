@@ -81,6 +81,8 @@ function buildSettingsTree(config: StateTransitionConfig): SettingsTreeNodes {
       label: "General",
       fields: {
         isSynced: { label: "Sync with other plots", input: "boolean", value: config.isSynced },
+        scrollToZoom: { label: "Scroll to zoom", input: "boolean", value: config.scrollToZoom },
+        resetZoom: { prompt: "Reset zoom", input: "button", value: config.resetZoom },
       },
     },
     paths: makeRootSeriesNode(config.paths),
@@ -100,6 +102,32 @@ export function useStateTransitionsPanelSettings(
         const { input, path, value } = action.payload;
         if (input === "boolean" && isEqual(path, ["general", "isSynced"])) {
           saveConfig({ isSynced: value });
+        } else {
+          saveConfig(
+            produce((draft) => {
+              set(draft, path, value);
+            }),
+          );
+        }
+      }
+
+      if (action.action === "update") {
+        const { input, path, value } = action.payload;
+        if (input === "boolean" && isEqual(path, ["general", "scrollToZoom"])) {
+          saveConfig({ scrollToZoom: value });
+        } else {
+          saveConfig(
+            produce((draft) => {
+              set(draft, path, value);
+            }),
+          );
+        }
+      }
+
+      if (action.action === "update") {
+        const { input, path, value } = action.payload;
+        if (input === "button" && isEqual(path, ["general", "resetZoom"])) {
+          saveConfig({ resetZoom: value });
         } else {
           saveConfig(
             produce((draft) => {

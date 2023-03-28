@@ -115,35 +115,6 @@ const useStyles = makeStyles<void, "button">()((theme) => ({
   },
 }));
 
-const plugins: ChartOptions["plugins"] = {
-  datalabels: {
-    display: "auto",
-    anchor: "center",
-    align: -45,
-    offset: 0,
-    clip: true,
-    font: {
-      family: fontFamily,
-      size: fontSize,
-      weight: fontWeight,
-    },
-  },
-  zoom: {
-    zoom: {
-      enabled: true,
-      mode: "x",
-      sensitivity: 3,
-      speed: 0.1,
-    },
-    pan: {
-      mode: "x",
-      enabled: true,
-      speed: 20,
-      threshold: 10,
-    },
-  },
-};
-
 export function openSiblingStateTransitionsPanel(
   openSiblingPanel: OpenSiblingPanel,
   topicName: string,
@@ -299,6 +270,38 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
     };
   }, []);
 
+  const plugins = useMemo<ChartOptions["plugins"]>(
+    () => ({
+      datalabels: {
+        display: "auto",
+        anchor: "center",
+        align: -45,
+        offset: 0,
+        clip: true,
+        font: {
+          family: fontFamily,
+          size: fontSize,
+          weight: fontWeight,
+        },
+      },
+      zoom: {
+        zoom: {
+          enabled: config.scrollToZoom,
+          mode: "x",
+          sensitivity: 3,
+          speed: 0.1,
+        },
+        pan: {
+          mode: "x",
+          enabled: config.scrollToZoom,
+          speed: 20,
+          threshold: 10,
+        },
+      },
+    }),
+    [config.scrollToZoom],
+  );
+
   // Use a debounce and 0 refresh rate to avoid triggering a resize observation while handling
   // an existing resize observation.
   // https://github.com/maslianok/react-resize-detector/issues/45
@@ -388,6 +391,7 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
 const defaultConfig: StateTransitionConfig = {
   paths: [{ value: "", timestampMethod: "receiveTime" }],
   isSynced: true,
+  scrollToZoom: true,
 };
 export default Panel(
   Object.assign(StateTransitions, {

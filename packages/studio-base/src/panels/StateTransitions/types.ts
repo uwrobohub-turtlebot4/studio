@@ -15,4 +15,5 @@ export type StateTransitionPath = {
 export type StateTransitionConfig = {
   paths: StateTransitionPath[];
   isSynced: boolean;
+  scrollToZoom: boolean;
 };

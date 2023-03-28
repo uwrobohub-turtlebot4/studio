@@ -467,6 +467,7 @@ export type SettingsIcon =
  */
 export type SettingsTreeFieldValue =
   | { input: "autocomplete"; value?: string; items: string[] }
+  | { input: "button"; value?: string; prompt: string }
   | { input: "boolean"; value?: boolean }
   | {
       input: "rgb";

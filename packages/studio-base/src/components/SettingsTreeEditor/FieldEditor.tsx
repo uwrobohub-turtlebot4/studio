@@ -15,6 +15,7 @@ import {
   Tooltip,
   TextField,
   ListProps,
+  Button,
 } from "@mui/material";
 import { DeepReadonly } from "ts-essentials";
 import { makeStyles } from "tss-react/mui";
@@ -80,6 +81,13 @@ const useStyles = makeStyles<void, "error">()((theme, _params, classes) => {
       },
       "&:focus-within": {
         backgroundColor: inputBackgroundColor,
+      },
+    },
+    button: {
+      backgroundColor: inputBackgroundColor,
+
+      "&:hover": {
+        backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.13)" : "rgba(0, 0, 0, 0.09)",
       },
     },
     styledToggleButtonGroup: {
@@ -154,6 +162,18 @@ function FieldInput({
           }
           options={field.items}
         />
+      );
+    case "button":
+      return (
+        <Button
+          className={classes.button}
+          size="small"
+          variant="contained"
+          color="inherit"
+          fullWidth
+        >
+          {field.prompt}
+        </Button>
       );
     case "number":
       return (
