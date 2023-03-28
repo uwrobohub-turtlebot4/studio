@@ -136,6 +136,7 @@ export const OnePath: Story = () => {
       <StateTransitions
         overrideConfig={{
           paths: [{ value: "/some/topic/with/state.state", timestampMethod: "receiveTime" }],
+          scrollToZoom: true,
           isSynced: true,
         }}
       />
@@ -156,6 +157,7 @@ export const WithSettings: Story = () => {
         overrideConfig={{
           paths: [{ value: "/some/topic/with/state.state", timestampMethod: "receiveTime" }],
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -178,6 +180,7 @@ export const MultiplePaths: Story = () => {
             timestampMethod: "receiveTime",
           }),
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -210,6 +213,7 @@ export const MultiplePathsWithHover: Story = () => {
             timestampMethod: "receiveTime",
           }),
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -229,6 +233,7 @@ export const LongPath: Story = () => {
         overrideConfig={{
           paths: [{ value: "/some/topic/with/state.state", timestampMethod: "receiveTime" }],
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -248,6 +253,7 @@ export const JsonPath: Story = () => {
         overrideConfig={{
           paths: [{ value: "/some/topic/with/state.data.value", timestampMethod: "receiveTime" }],
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -269,6 +275,7 @@ export const ColorClash: Story = () => {
             { value: "/some/topic/with/string_state.data.value", timestampMethod: "receiveTime" },
           ],
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
@@ -343,6 +350,7 @@ export const Blocks: Story = () => {
             { value: "/blocks.state", timestampMethod: "receiveTime" },
           ],
           isSynced: true,
+          scrollToZoom: true,
         }}
       />
     </PanelSetup>
