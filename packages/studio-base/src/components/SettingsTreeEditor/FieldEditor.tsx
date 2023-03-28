@@ -166,6 +166,7 @@ function FieldInput({
     case "button":
       return (
         <Button
+          disabled={field.disabled}
           className={classes.button}
           size="small"
           variant="contained"
