@@ -9,6 +9,8 @@ import { Duration, Time } from "./time";
 
 const DEFAULT_MAX_CAPACITY_PER_FRAME = 50_000;
 
+export const NONE_ROOT_FRAME_ID = "NONE_ROOT_FRAME";
+
 export enum AddTransformResult {
   NOT_UPDATED,
   UPDATED,
@@ -23,6 +25,7 @@ export class TransformTree {
   private _frames = new Map<string, CoordinateFrame>();
   private _maxStorageTime: Duration;
   private _maxCapacityPerFrame: number;
+  public defaultRootFrame: CoordinateFrame;
 
   public constructor(
     maxStorageTime = MAX_DURATION,
@@ -30,6 +33,13 @@ export class TransformTree {
   ) {
     this._maxStorageTime = maxStorageTime;
     this._maxCapacityPerFrame = maxCapacityPerFrame;
+    this.defaultRootFrame = new CoordinateFrame(
+      NONE_ROOT_FRAME_ID,
+      undefined,
+      this._maxStorageTime,
+      this._maxCapacityPerFrame,
+    );
+    this.defaultRootFrame.addTransform(0n, Transform.Identity());
   }
 
   public addTransform(
@@ -145,10 +155,16 @@ export class TransformTree {
   }
 
   public hasFrame(id: string): boolean {
+    if (id === NONE_ROOT_FRAME_ID) {
+      return true;
+    }
     return this._frames.has(id);
   }
 
   public frame(id: string): CoordinateFrame | undefined {
+    if (id === NONE_ROOT_FRAME_ID) {
+      return this.defaultRootFrame;
+    }
     return this._frames.get(id);
   }
 
