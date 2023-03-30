@@ -28,6 +28,9 @@ const tempTransform = Transform.Identity();
 const tempMatrix = mat4Identity();
 const temp2Matrix = mat4Identity();
 
+export const FALLBACK_FRAME_ID = Symbol("FALLBACK_FRAME_ID");
+export type FallbackFrameID = typeof FALLBACK_FRAME_ID;
+
 /**
  * CoordinateFrame is a named 3D coordinate frame with an optional parent frame
  * and a history of transforms from this frame to its parent. The parent/child
@@ -35,8 +38,8 @@ const temp2Matrix = mat4Identity();
  * coordinate frame to another while interpolating over time.
  */
 // ts-prune-ignore-next
-export class CoordinateFrame {
-  public readonly id: string;
+export class CoordinateFrame<ID extends string | FallbackFrameID = string | FallbackFrameID> {
+  public readonly id: ID;
   public maxStorageTime: Duration;
   public maxCapacity: number;
   // The percentage of maxCapacity that can be exceeded before overfilled frames in history are cleared
@@ -45,25 +48,30 @@ export class CoordinateFrame {
   public offsetPosition: vec3 | undefined;
   public offsetEulerDegrees: vec3 | undefined;
 
-  private _parent?: CoordinateFrame;
+  private _parent?: CoordinateFrame<string>;
   private _transforms: ArrayMap<Time, Transform>;
 
   public constructor(
-    id: string,
+    id: ID,
     parent: CoordinateFrame | undefined,
     maxStorageTime: Duration,
     maxCapacity: number,
     capacityOverfillPercentage = 0.1,
   ) {
+    if (parent) {
+      if (parent.id === FALLBACK_FRAME_ID) {
+        throw new Error("Fallback frame is not allowed as a parent");
+      }
+      this._parent = parent as CoordinateFrame<string>;
+    }
     this.id = id;
     this.maxStorageTime = maxStorageTime;
     this.maxCapacity = maxCapacity;
     this.capacityOverfillPercentage = capacityOverfillPercentage;
-    this._parent = parent;
     this._transforms = new ArrayMap<Time, Transform>();
   }
 
-  public parent(): CoordinateFrame | undefined {
+  public parent(): CoordinateFrame<string> | undefined {
     return this._parent;
   }
 
@@ -71,9 +79,9 @@ export class CoordinateFrame {
    * Returns the top-most frame by walking up each parent frame. If the current
    * frame does not have a parent, the current frame is returned.
    */
-  public root(): CoordinateFrame {
+  public root(): CoordinateFrame<string | ID> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let root: CoordinateFrame = this;
+    let root: CoordinateFrame<string | ID> = this;
     while (root._parent) {
       root = root._parent;
     }
@@ -99,10 +107,13 @@ export class CoordinateFrame {
    * a different frame, the transform history is cleared.
    */
   public setParent(parent: CoordinateFrame): void {
+    if (parent.id === FALLBACK_FRAME_ID) {
+      throw new Error("Fallback frame is not allowed as a parent");
+    }
     if (this._parent && this._parent !== parent) {
       this._transforms.clear();
     }
-    this._parent = parent;
+    this._parent = parent as CoordinateFrame<string>;
   }
 
   /**
@@ -272,6 +283,9 @@ export class CoordinateFrame {
     maxDelta: Duration = MAX_DURATION,
   ): Pose | undefined {
     // perf-sensitive: function params instead of options object to avoid allocations
+    if (this.id === FALLBACK_FRAME_ID || srcFrame.id === FALLBACK_FRAME_ID) {
+      return undefined;
+    }
     if (srcFrame === this) {
       // Identity transform
       copyPose(out, input);
@@ -291,6 +305,9 @@ export class CoordinateFrame {
     // Check if the two frames share a common ancestor
     let curSrcFrame: CoordinateFrame | undefined = srcFrame;
     while (curSrcFrame) {
+      if (curSrcFrame.id === FALLBACK_FRAME_ID) {
+        throw new Error("Fallback frame should not be an ancestor of any other frame");
+      }
       const commonAncestor = this.findAncestor(curSrcFrame.id);
       if (commonAncestor) {
         // Common ancestor found. Apply transforms from the source frame to the common ancestor,
@@ -456,7 +473,9 @@ export class CoordinateFrame {
       mat4.multiply(out, tempTransform.matrix(), out);
 
       if (curFrame._parent == undefined) {
-        throw new Error(`Frame "${parentFrame.id}" is not a parent of "${childFrame.id}"`);
+        throw new Error(
+          `Frame "${parentFrame.displayName()}" is not a parent of "${childFrame.displayName()}"`,
+        );
       }
       curFrame = curFrame._parent;
     }
@@ -506,7 +525,10 @@ export class CoordinateFrame {
    * Returns a display-friendly rendition of `frameId`, quoting the id if it is
    * an empty string or starts or ends with whitespace.
    */
-  public static DisplayName(frameId: string): string {
+  public static DisplayName(frameId: string | FallbackFrameID): string {
+    if (frameId === FALLBACK_FRAME_ID) {
+      return "(none)";
+    }
     return frameId === "" || frameId.startsWith(" ") || frameId.endsWith(" ")
       ? `"${frameId}"`
       : frameId;

@@ -2,14 +2,17 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { CoordinateFrame, MAX_DURATION } from "./CoordinateFrame";
+import {
+  CoordinateFrame,
+  MAX_DURATION,
+  FALLBACK_FRAME_ID,
+  FallbackFrameID,
+} from "./CoordinateFrame";
 import { Transform } from "./Transform";
 import { Pose } from "./geometry";
 import { Duration, Time } from "./time";
 
 const DEFAULT_MAX_CAPACITY_PER_FRAME = 50_000;
-
-export const NONE_ROOT_FRAME_ID = "NONE_ROOT_FRAME";
 
 export enum AddTransformResult {
   NOT_UPDATED,
@@ -22,10 +25,10 @@ export enum AddTransformResult {
  * for getting and creating frames and adding transforms between frames.
  */
 export class TransformTree {
-  private _frames = new Map<string, CoordinateFrame>();
+  private _frames = new Map<string, CoordinateFrame<string>>();
   private _maxStorageTime: Duration;
   private _maxCapacityPerFrame: number;
-  public defaultRootFrame: CoordinateFrame;
+  public defaultRootFrame: CoordinateFrame<FallbackFrameID>;
 
   public constructor(
     maxStorageTime = MAX_DURATION,
@@ -34,7 +37,7 @@ export class TransformTree {
     this._maxStorageTime = maxStorageTime;
     this._maxCapacityPerFrame = maxCapacityPerFrame;
     this.defaultRootFrame = new CoordinateFrame(
-      NONE_ROOT_FRAME_ID,
+      FALLBACK_FRAME_ID,
       undefined,
       this._maxStorageTime,
       this._maxCapacityPerFrame,
@@ -92,7 +95,7 @@ export class TransformTree {
    * Walk up the tree starting from `candidate` and prune frames with no history entries and no
    * children.
    */
-  private _removeEmptyAncestors(candidate: CoordinateFrame): void {
+  private _removeEmptyAncestors(candidate: CoordinateFrame<string>): void {
     if (candidate.transformsSize() > 0) {
       // don't want to delete this frame, it is not empty
       return;
@@ -154,21 +157,21 @@ export class TransformTree {
     }
   }
 
-  public hasFrame(id: string): boolean {
-    if (id === NONE_ROOT_FRAME_ID) {
+  public hasFrame(id: CoordinateFrame["id"]): boolean {
+    if (id === FALLBACK_FRAME_ID) {
       return true;
     }
     return this._frames.has(id);
   }
 
-  public frame(id: string): CoordinateFrame | undefined {
-    if (id === NONE_ROOT_FRAME_ID) {
-      return this.defaultRootFrame;
+  public frame<ID extends CoordinateFrame["id"]>(id: ID): CoordinateFrame<ID> | undefined {
+    if (id === FALLBACK_FRAME_ID) {
+      return this.defaultRootFrame as CoordinateFrame<ID>;
     }
-    return this._frames.get(id);
+    return this._frames.get(id) as CoordinateFrame<ID>;
   }
 
-  public getOrCreateFrame(id: string): CoordinateFrame {
+  public getOrCreateFrame(id: string): CoordinateFrame<string> {
     let frame = this._frames.get(id);
     if (!frame) {
       frame = new CoordinateFrame(id, undefined, this._maxStorageTime, this._maxCapacityPerFrame);
@@ -177,16 +180,16 @@ export class TransformTree {
     return frame;
   }
 
-  public frames(): ReadonlyMap<string, CoordinateFrame> {
+  public frames(): ReadonlyMap<string, CoordinateFrame<string>> {
     return this._frames;
   }
 
   public apply(
     output: Pose,
     input: Readonly<Pose>,
-    frameId: string,
-    rootFrameId: string | undefined,
-    srcFrameId: string,
+    frameId: string | FallbackFrameID,
+    rootFrameId: string | FallbackFrameID | undefined,
+    srcFrameId: string | FallbackFrameID,
     dstTime: Time,
     srcTime: Time,
     maxDelta?: Duration,

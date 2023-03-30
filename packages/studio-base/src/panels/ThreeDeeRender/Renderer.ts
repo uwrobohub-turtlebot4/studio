@@ -78,7 +78,7 @@ import { BaseSettings, CustomLayerSettings, SelectEntry } from "./settings";
 import {
   AddTransformResult,
   makePose,
-  NONE_ROOT_FRAME_ID,
+  FALLBACK_FRAME_ID,
   Pose,
   Transform,
   TransformTree,
@@ -1170,8 +1170,8 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.selectionBackdrop.visible = this.selectedRenderable != undefined;
 
     // use the NONE_ROOT_FRAME_ID if renderFrame is undefined and there are no options for transforms
-    const renderFrameId = this.renderFrameId ?? NONE_ROOT_FRAME_ID;
-    const fixedFrameId = this.fixedFrameId ?? NONE_ROOT_FRAME_ID;
+    const renderFrameId = this.renderFrameId ?? FALLBACK_FRAME_ID;
+    const fixedFrameId = this.fixedFrameId ?? FALLBACK_FRAME_ID;
 
     const renderFrame = this.transformTree.frame(renderFrameId);
     const fixedFrame = this.transformTree.frame(fixedFrameId);

@@ -4,15 +4,15 @@
 
 import * as THREE from "three";
 
-import { TransformTree, makePose, Pose } from "./transforms";
+import { TransformTree, makePose, Pose, FallbackFrameID } from "./transforms";
 
 const tempPose = makePose();
 
 export function updatePose(
   renderable: THREE.Object3D,
   transformTree: TransformTree,
-  renderFrameId: string,
-  fixedFrameId: string,
+  renderFrameId: string | FallbackFrameID,
+  fixedFrameId: string | FallbackFrameID,
   srcFrameId: string,
   dstTime: bigint,
   srcTime: bigint,
