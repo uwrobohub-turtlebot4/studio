@@ -3,9 +3,15 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import ClearIcon from "@mui/icons-material/Clear";
+import CloseIcon from "@mui/icons-material/Close";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
+  Link,
   List,
   ListItem,
   ListItemText,
@@ -18,6 +24,8 @@ import { Fzf, FzfResultItem } from "fzf";
 import { useMemo, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 
+import { filterMap } from "@foxglove/den/collection";
+import { MessageDefinition } from "@foxglove/message-definition";
 import { DirectTopicStatsUpdater } from "@foxglove/studio-base/components/DirectTopicStatsUpdater";
 import {
   MessagePipelineContext,
@@ -26,6 +34,8 @@ import {
 import Stack from "@foxglove/studio-base/components/Stack";
 import { PlayerPresence, TopicStats } from "@foxglove/studio-base/players/types";
 import { Topic } from "@foxglove/studio-base/src/players/types";
+import { RosDatatypes } from "@foxglove/studio-base/types/RosDatatypes";
+import { getMessageDocumentationLink } from "@foxglove/studio-base/util/getMessageDocumentationLink";
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 type TopicWithStats = Topic & Partial<TopicStats>;
@@ -95,19 +105,92 @@ const useStyles = makeStyles()((theme) => ({
   startAdornment: {
     display: "flex",
   },
+  schemaInfoButton: {
+    padding: theme.spacing(0.25),
+    borderRadius: "50%",
+    verticalAlign: "bottom",
+  },
+  schemaInfoIcon: {
+    fontSize: theme.spacing(1.75),
+  },
 }));
 
 const selectPlayerPresence = ({ playerState }: MessagePipelineContext) => playerState.presence;
 const selectSortedTopics = ({ sortedTopics }: MessagePipelineContext) => sortedTopics;
+const selectDatatypes = ({ datatypes }: MessagePipelineContext) => datatypes;
+
+function SchemaInfoModal({
+  schemaName,
+  schema,
+  open,
+  onClose,
+}: {
+  schemaName: string;
+  schema: MessageDefinition;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const link = useMemo(() => getMessageDocumentationLink(schemaName), [schemaName]);
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <IconButton
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          right: 8,
+          top: 8,
+        }}
+      >
+        <CloseIcon />
+      </IconButton>
+      <DialogTitle>{schemaName}</DialogTitle>
+      <DialogContent>
+        {link != undefined && (
+          <Link target="_blank" href={link}>
+            View docs
+          </Link>
+        )}
+        <ul>
+          {filterMap(schema.definitions, (def) => {
+            if (def.isConstant !== true) {
+              return undefined;
+            }
+            return (
+              <li>
+                <b>{def.name}</b>: {def.type} (constant)
+              </li>
+            );
+          })}
+          {filterMap(schema.definitions, (def) => {
+            if (def.isConstant === true) {
+              return undefined;
+            }
+            return (
+              <li>
+                <b>{def.name}</b>: {def.type}
+              </li>
+            );
+          })}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function TopicListItem({
   topic,
   positions,
+  datatypes,
 }: {
   topic: Topic;
   positions: Set<number>;
+  datatypes: RosDatatypes;
 }): JSX.Element {
   const { classes } = useStyles();
+  const [schemaInfoShown, setSchemaInfoShown] = useState(false);
+  const schema = useMemo(() => {
+    return topic.schemaName != undefined ? datatypes.get(topic.schemaName) : undefined;
+  }, [datatypes, topic.schemaName]);
   return (
     <ListItem
       className={classes.listItem}
@@ -134,6 +217,14 @@ function TopicListItem({
         </Stack>
       }
     >
+      {topic.schemaName != undefined && schema && (
+        <SchemaInfoModal
+          schemaName={topic.schemaName}
+          schema={schema}
+          open={schemaInfoShown}
+          onClose={() => setSchemaInfoShown(false)}
+        />
+      )}
       <ListItemText
         primary={<HighlightChars str={topic.name} indices={positions} />}
         primaryTypographyProps={{ noWrap: true, title: topic.name }}
@@ -141,11 +232,23 @@ function TopicListItem({
           topic.schemaName == undefined ? (
             "—"
           ) : (
-            <HighlightChars
-              str={topic.schemaName}
-              indices={positions}
-              offset={topic.name.length + 1}
-            />
+            <>
+              <HighlightChars
+                str={topic.schemaName}
+                indices={positions}
+                offset={topic.name.length + 1}
+              />
+              {schema && (
+                <IconButton
+                  size="small"
+                  title="Info"
+                  className={classes.schemaInfoButton}
+                  onClick={() => setSchemaInfoShown(true)}
+                >
+                  <InfoOutlinedIcon className={classes.schemaInfoIcon} />
+                </IconButton>
+              )}
+            </>
           )
         }
         secondaryTypographyProps={{
@@ -168,6 +271,7 @@ export function TopicList(): JSX.Element {
 
   const playerPresence = useMessagePipeline(selectPlayerPresence);
   const topics = useMessagePipeline(selectSortedTopics);
+  const datatypes = useMessagePipeline(selectDatatypes);
 
   const filteredTopics: FzfResultItem<Topic>[] = useMemo(
     () =>
@@ -267,7 +371,14 @@ export function TopicList(): JSX.Element {
       {filteredTopics.length > 0 ? (
         <List key="topics" dense disablePadding>
           {filteredTopics.map(({ item: topic, positions }) => {
-            return <MemoTopicListItem key={topic.name} topic={topic} positions={positions} />;
+            return (
+              <MemoTopicListItem
+                key={topic.name}
+                topic={topic}
+                positions={positions}
+                datatypes={datatypes}
+              />
+            );
           })}
         </List>
       ) : (

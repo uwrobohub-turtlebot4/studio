@@ -18,10 +18,10 @@ import { makeStyles } from "tss-react/mui";
 import CopyButton from "@foxglove/studio-base/components/CopyButton";
 import Stack from "@foxglove/studio-base/components/Stack";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
+import { getMessageDocumentationLink } from "@foxglove/studio-base/util/getMessageDocumentationLink";
 import { formatTimeRaw } from "@foxglove/studio-base/util/time";
 
 import { copyMessageReplacer } from "./copyMessageReplacer";
-import { getMessageDocumentationLink } from "./utils";
 
 const useStyles = makeStyles()((theme) => ({
   button: {

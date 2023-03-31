@@ -11,16 +11,9 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { first, kebabCase, last } from "lodash";
-
-import { ros1 } from "@foxglove/rosmsg-msgs-common";
-import { foxgloveMessageSchemas } from "@foxglove/schemas/internal";
 import { diffLabels, DiffObject } from "@foxglove/studio-base/panels/RawMessages/getDiff";
 
 export const DATA_ARRAY_PREVIEW_LIMIT = 20;
-const ROS1_COMMON_MSG_PACKAGES = new Set(Object.keys(ros1).map((key) => key.split("/")[0]!));
-ROS1_COMMON_MSG_PACKAGES.add("turtlesim");
-
 function isTypedArray(obj: unknown) {
   return Boolean(
     obj != undefined &&
@@ -87,29 +80,4 @@ export function getChangeCounts(
     }
   }
   return startingCounts;
-}
-
-const foxgloveDocsLinksByDatatype = new Map<string, string>();
-for (const schema of Object.values(foxgloveMessageSchemas)) {
-  const url = `https://foxglove.dev/docs/studio/messages/${kebabCase(schema.name)}`;
-  foxgloveDocsLinksByDatatype.set(`foxglove_msgs/${schema.name}`, url);
-  foxgloveDocsLinksByDatatype.set(`foxglove_msgs/msg/${schema.name}`, url);
-  foxgloveDocsLinksByDatatype.set(`foxglove.${schema.name}`, url);
-}
-
-export function getMessageDocumentationLink(datatype: string): string | undefined {
-  const parts = datatype.split(/[/.]/);
-  const pkg = first(parts);
-  const filename = last(parts);
-
-  if (pkg != undefined && ROS1_COMMON_MSG_PACKAGES.has(pkg)) {
-    return `https://docs.ros.org/api/${pkg}/html/msg/${filename}.html`;
-  }
-
-  const foxgloveDocsLink = foxgloveDocsLinksByDatatype.get(datatype);
-  if (foxgloveDocsLink != undefined) {
-    return foxgloveDocsLink;
-  }
-
-  return undefined;
 }
