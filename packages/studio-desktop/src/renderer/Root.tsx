@@ -147,7 +147,7 @@ export default function Root(props: {
         extensionLoaders={extensionLoaders}
         nativeAppMenu={nativeAppMenu}
         nativeWindow={nativeWindow}
-        enableGlobalCss
+        // enableGlobalCss
         appBarLeftInset={ctxbridge?.platform === "darwin" && !isFullScreen ? 72 : undefined}
         onAppBarDoubleClick={() => nativeWindow.handleTitleBarDoubleClick()}
         showCustomWindowControls={ctxbridge?.platform === "linux"}

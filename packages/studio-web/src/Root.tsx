@@ -67,7 +67,7 @@ export function Root(props: {
         appConfiguration={appConfiguration}
         layoutStorage={layoutStorage}
         extensionLoaders={extensionLoaders}
-        enableGlobalCss
+        // enableGlobalCss
         extraProviders={props.extraProviders}
       />
     </>
