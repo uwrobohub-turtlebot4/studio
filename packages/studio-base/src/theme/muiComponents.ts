@@ -238,6 +238,8 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       },
       styleOverrides: {
         root: {
+          ...theme.typography.body1,
+
           ".MuiBackdrop-root": {
             backgroundColor: alpha(theme.palette.common.black, 0.4),
           },
@@ -260,8 +262,6 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
     MuiDialogContent: {
       styleOverrides: {
         root: {
-          ...theme.typography.body1,
-
           "& + .MuiDialogActions-root": {
             paddingTop: 0,
           },
