@@ -2,12 +2,10 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { GlobalStyles, useTheme } from "@mui/material";
+import { GlobalStyles } from "@mui/material";
 
 /** GlobalCss component configures html, body, and #root with theme elements */
 export default function GlobalCss(): JSX.Element {
-  const theme = useTheme();
-
   return (
     <GlobalStyles
       styles={{

@@ -6,7 +6,7 @@ import { Suspense, Fragment, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
-// import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
+import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
 import EventsProvider from "@foxglove/studio-base/providers/EventsProvider";
 import { StudioLogsSettingsProvider } from "@foxglove/studio-base/providers/StudioLogsSettingsProvider";
 import TimelineInteractionStateProvider from "@foxglove/studio-base/providers/TimelineInteractionStateProvider";
@@ -46,7 +46,7 @@ type AppProps = CustomWindowControlsProps & {
   nativeAppMenu?: INativeAppMenu;
   nativeWindow?: INativeWindow;
   enableLaunchPreferenceScreen?: boolean;
-  // enableGlobalCss?: boolean;
+  enableGlobalCss?: boolean;
   appBarLeftInset?: number;
   extraProviders?: JSX.Element[];
   onAppBarDoubleClick?: () => void;
@@ -72,7 +72,7 @@ export function App(props: AppProps): JSX.Element {
     nativeWindow,
     deepLinks,
     enableLaunchPreferenceScreen,
-    // enableGlobalCss = false,
+    enableGlobalCss = false,
     extraProviders,
   } = props;
 
@@ -115,7 +115,7 @@ export function App(props: AppProps): JSX.Element {
   return (
     <AppConfigurationContext.Provider value={appConfiguration}>
       <ColorSchemeThemeProvider>
-        {/* {enableGlobalCss && <GlobalCss />} */}
+        {enableGlobalCss && <GlobalCss />}
         <CssBaseline>
           <ErrorBoundary>
             <MaybeLaunchPreference>

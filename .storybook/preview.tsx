@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { Condvar } from "@foxglove/den/async";
 import CssBaseline from "@foxglove/studio-base/components/CssBaseline";
 // import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
+import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
 import MultiProvider from "@foxglove/studio-base/components/MultiProvider";
 import StudioToastProvider from "@foxglove/studio-base/components/StudioToastProvider";
 import AppConfigurationContext from "@foxglove/studio-base/context/AppConfigurationContext";
@@ -92,16 +93,6 @@ function StudioContextProviders({
         width: "100%",
       }}
     >
-      {/* {
-        // We need to render exactly 1 copy of GlobalCss, so the body background and font color may
-        // not match the theme when rendering both color schemes in one story. If this is a problem
-        // for some story that depends on inheriting body styles, you can split the story into one
-        // per color scheme.
-        <ThemeProvider isDark={colorScheme === "dark" || colorScheme.startsWith("both")}>
-          <GlobalCss />
-        </ThemeProvider>
-      } */}
-
       {(colorScheme === "light" || colorScheme.startsWith("both")) && (
         <div
           style={{
@@ -116,6 +107,7 @@ function StudioContextProviders({
             value={needsCombinedReadySignal ? readySignal1 : readySignal}
           >
             <ThemeProvider isDark={false}>
+              <GlobalCss />
               <CssBaseline>
                 <MultiProvider providers={providers}>{children}</MultiProvider>
               </CssBaseline>
@@ -137,6 +129,7 @@ function StudioContextProviders({
             value={needsCombinedReadySignal ? readySignal2 : readySignal}
           >
             <ThemeProvider isDark={true}>
+              <GlobalCss />
               <CssBaseline>
                 <MultiProvider providers={providers}>{children}</MultiProvider>
               </CssBaseline>
