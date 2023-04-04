@@ -238,13 +238,13 @@ export default function muiComponents(theme: Theme): Theme["components"] & MuiLa
       },
       styleOverrides: {
         root: {
-          ...theme.typography.body1,
-
           ".MuiBackdrop-root": {
             backgroundColor: alpha(theme.palette.common.black, 0.4),
           },
         },
         paper: {
+          ...theme.typography.body1,
+
           // Prevent dialog from going underneath window title bar controls on Windows
           maxHeight: `calc(100% - 2 * (env(titlebar-area-height, ${theme.spacing(
             2,
