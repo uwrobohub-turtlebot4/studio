@@ -109,8 +109,8 @@ const useStyles = makeStyles()((theme) => ({
       color: theme.palette.primary[theme.palette.mode === "dark" ? "light" : "dark"],
     },
   },
-  recentSourceSecondary: {
-    color: "inherit",
+  recentListItemText: {
+    lineHeight: 1.15,
   },
   featureList: {
     paddingLeft: theme.spacing(1.5),
@@ -520,10 +520,14 @@ export default function Start(props: IStartProps): JSX.Element {
                       onClick={() => selectRecent(recent.id)}
                       className={classes.recentListItemButton}
                     >
-                      <TextMiddleTruncate
-                        className={classes.recentSourceSecondary}
-                        text={recent.title}
-                      />
+                      <Typography
+                        variant="body2"
+                        color="inherit"
+                        className={classes.recentListItemText}
+                        noWrap
+                      >
+                        <TextMiddleTruncate text={recent.title} />
+                      </Typography>
                     </ListItemButton>
                   </ListItem>
                 ))}
