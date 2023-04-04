@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 
 import { Condvar } from "@foxglove/den/async";
 import CssBaseline from "@foxglove/studio-base/components/CssBaseline";
-// import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
 import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
 import MultiProvider from "@foxglove/studio-base/components/MultiProvider";
 import StudioToastProvider from "@foxglove/studio-base/components/StudioToastProvider";
