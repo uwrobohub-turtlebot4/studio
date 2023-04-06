@@ -16,6 +16,7 @@ import { initI18n, Language } from "@foxglove/studio-base/i18n";
 import TimelineInteractionStateProvider from "@foxglove/studio-base/providers/TimelineInteractionStateProvider";
 import ReadySignalContext from "@foxglove/studio-base/stories/ReadySignalContext";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
+import { dark, light } from "@foxglove/studio-base/theme/palette";
 import { makeMockAppConfiguration } from "@foxglove/studio-base/util/makeMockAppConfiguration";
 import waitForFonts from "@foxglove/studio-base/util/waitForFonts";
 
@@ -189,4 +190,18 @@ export const decorators = [WithContextProviders, WithI18nUnlessDisabled];
 export const parameters = {
   // Disable default padding around the page body
   layout: "fullscreen",
+
+  backgrounds: {
+    default: "light",
+    values: [
+      {
+        name: "light",
+        value: light.background?.default,
+      },
+      {
+        name: "dark",
+        value: dark.background?.default,
+      },
+    ],
+  },
 };
