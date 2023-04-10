@@ -13,7 +13,7 @@
 
 import DownloadIcon from "@mui/icons-material/Download";
 import { useTheme } from "@mui/material";
-import { compact, isNumber, uniq } from "lodash";
+import { compact, isEmpty, isNumber, pick, uniq } from "lodash";
 import memoizeWeak from "memoize-weak";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -348,28 +348,10 @@ function Plot(props: Props) {
         return { tag: new Date().toISOString(), data: {} };
       }
 
-      const updated: PlotDataByPath = {};
-      for (const path of allPaths) {
-        const plotData = previous.data[path];
-        if (plotData) {
-          updated[path] = plotData;
-        }
-      }
-
-      return { ...previous, data: updated };
+      return { ...previous, data: pick(previous.data, allPaths) };
     },
     [allPaths],
   );
-
-  // The addMessages function below is passed to useMessageReducer to handle new messages during
-  // playback. If we have messages for a specific path in _blocks_ then we ignore the messages in
-  // the reducer.
-  //
-  // To keep the addMessages function "stable" when loading new blocks we grab only the paths from
-  // the blocks and make addMessages depend on the paths. To keep paths referentially stable when
-  // the paths values haven't changed we use a shallow memo.
-  const blockPaths = useMemo(() => Object.keys(plotDataForBlocks), [plotDataForBlocks]);
-  const blockPathsMemo = useShallowMemo(blockPaths);
 
   const addMessages = useCallback(
     (accumulated: TaggedPlotDataByPath, msgEvents: readonly MessageEvent<unknown>[]) => {
@@ -387,12 +369,6 @@ function Plot(props: Props) {
         }
 
         for (const path of paths) {
-          // Skip any paths we already service in plotDataForBlocks.
-          // We don't need to accumulate these because the block data takes precedence.
-          if (blockPathsMemo.includes(path)) {
-            continue;
-          }
-
           const dataItem = cachedGetMessagePathDataItems(path, msgEvent);
           if (!dataItem) {
             continue;
@@ -440,13 +416,7 @@ function Plot(props: Props) {
 
       return newAccumulated ?? accumulated;
     },
-    [
-      blockPathsMemo,
-      cachedGetMessagePathDataItems,
-      followingView,
-      showSingleCurrentMessage,
-      topicToPaths,
-    ],
+    [cachedGetMessagePathDataItems, followingView, showSingleCurrentMessage, topicToPaths],
   );
 
   // The extra useShallowMemo is useful when seeking. Without it, the reduced value will be reset,
@@ -460,6 +430,21 @@ function Plot(props: Props) {
       addMessages,
     }),
   );
+
+  const [accumulatedPathIntervals, setAccumulatedPathIntervals] = useState<
+    Record<string, TaggedPlotDataByPath>
+  >({});
+
+  useEffect(() => {
+    if (!isEmpty(plotDataByPath.data)) {
+      setAccumulatedPathIntervals((oldValue) => ({
+        ...oldValue,
+        [plotDataByPath.tag]: plotDataByPath,
+      }));
+    }
+  }, [plotDataByPath]);
+
+  console.log({ accumulatedPathIntervals });
 
   // Keep disabled paths when passing into getDatasets, because we still want
   // easy access to the history when turning the disabled paths back on.
