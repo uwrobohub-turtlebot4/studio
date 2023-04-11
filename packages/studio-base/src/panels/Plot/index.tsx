@@ -14,7 +14,6 @@
 import DownloadIcon from "@mui/icons-material/Download";
 import { useTheme } from "@mui/material";
 import { compact, isEmpty, isNumber, pick, uniq } from "lodash";
-import memoizeWeak from "memoize-weak";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
 import { filterMap } from "@foxglove/den/collection";
@@ -27,12 +26,10 @@ import {
 } from "@foxglove/rostime";
 import { MessageEvent } from "@foxglove/studio";
 import { useBlocksByTopic, useMessageReducer } from "@foxglove/studio-base/PanelAPI";
-import { MessageBlock } from "@foxglove/studio-base/PanelAPI/useBlocksByTopic";
 import parseRosPath, {
   getTopicsFromPaths,
 } from "@foxglove/studio-base/components/MessagePathSyntax/parseRosPath";
 import {
-  MessageDataItemsByPath,
   useCachedGetMessagePathDataItems,
   useDecodeMessagePathsForMessagesByTopic,
 } from "@foxglove/studio-base/components/MessagePathSyntax/useCachedGetMessagePathDataItems";
@@ -60,8 +57,8 @@ import PlotChart from "./PlotChart";
 import { PlotLegend } from "./PlotLegend";
 import { downloadCSV } from "./csv";
 import { getDatasets } from "./datasets";
-import { DataSet, PlotDataByPath, PlotDataItem } from "./internalTypes";
-import { reducePlotData } from "./messages";
+import { DataSet, PlotDataByPath } from "./internalTypes";
+import { getBlockItemsByPath, reducePlotData } from "./messages";
 import { usePlotPanelSettings } from "./settings";
 import { PlotConfig } from "./types";
 
@@ -90,37 +87,7 @@ type Props = {
   saveConfig: SaveConfig<PlotConfig>;
 };
 
-// messagePathItems contains the whole parsed message, and we don't need to cache all of that.
-// Instead, throw away everything but what we need (the timestamps).
-const getPlotDataByPath = (itemsByPath: MessageDataItemsByPath): PlotDataByPath => {
-  const ret: PlotDataByPath = {};
-  Object.entries(itemsByPath).forEach(([path, items]) => {
-    ret[path] = [
-      items.map((messageAndData) => {
-        const headerStamp = getTimestampForMessage(messageAndData.messageEvent.message);
-        return {
-          queriedData: messageAndData.queriedData,
-          receiveTime: messageAndData.messageEvent.receiveTime,
-          headerStamp,
-        };
-      }),
-    ];
-  });
-  return ret;
-};
-
-const getMessagePathItemsForBlock = memoizeWeak(
-  (
-    decodeMessagePathsForMessagesByTopic: (_: MessageBlock) => MessageDataItemsByPath,
-    block: MessageBlock,
-  ): PlotDataByPath => {
-    return Object.freeze(getPlotDataByPath(decodeMessagePathsForMessagesByTopic(block)));
-  },
-);
-
 const ZERO_TIME = { sec: 0, nsec: 0 };
-
-const performance = window.performance;
 
 type TaggedPlotDataByPath = { tag: string; data: PlotDataByPath };
 
@@ -136,67 +103,6 @@ function buildTooltipLookupMap(datasets: DataSet[]): Map<string, TimeBasedChartT
     }
   }
   return lookup;
-}
-
-function getBlockItemsByPath(
-  decodeMessagePathsForMessagesByTopic: (_: MessageBlock) => MessageDataItemsByPath,
-  blocks: readonly MessageBlock[],
-) {
-  const ret: Record<string, PlotDataItem[][]> = {};
-  const lastBlockIndexForPath: Record<string, number> = {};
-  let count = 0;
-  let i = 0;
-  for (const block of blocks) {
-    const messagePathItemsForBlock: PlotDataByPath = getMessagePathItemsForBlock(
-      decodeMessagePathsForMessagesByTopic,
-      block,
-    );
-
-    // After 1 million data points we check if there is more memory to continue loading more
-    // data points. This helps prevent runaway memory use if the user tried to plot a binary topic.
-    //
-    // An example would be to try plotting `/map.data[:]` where map is an occupancy grid
-    // this can easily result in many millions of points.
-    if (count >= 1_000_000) {
-      // if we have memory stats we can let the user have more points as long as memory is not under pressure
-      if (performance.memory) {
-        const pct = performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit;
-        if (isNaN(pct) || pct > 0.6) {
-          return ret;
-        }
-      } else {
-        return ret;
-      }
-    }
-
-    for (const [path, messagePathItems] of Object.entries(messagePathItemsForBlock)) {
-      count += messagePathItems[0]?.[0]?.queriedData.length ?? 0;
-
-      const existingItems = ret[path] ?? [];
-      // getMessagePathItemsForBlock returns an array of exactly one range of items.
-      const [pathItems] = messagePathItems;
-      if (lastBlockIndexForPath[path] === i - 1) {
-        // If we are continuing directly from the previous block index (i - 1) then add to the
-        // existing range, otherwise start a new range
-        const currentRange = existingItems[existingItems.length - 1];
-        if (currentRange && pathItems) {
-          for (const item of pathItems) {
-            currentRange.push(item);
-          }
-        }
-      } else {
-        if (pathItems) {
-          // Start a new contiguous range. Make a copy so we can extend it.
-          existingItems.push(pathItems.slice());
-        }
-      }
-      ret[path] = existingItems;
-      lastBlockIndexForPath[path] = i;
-    }
-
-    i += 1;
-  }
-  return ret;
 }
 
 function selectStartTime(ctx: MessagePipelineContext) {
