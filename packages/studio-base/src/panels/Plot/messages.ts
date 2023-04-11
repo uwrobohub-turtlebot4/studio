@@ -24,8 +24,10 @@ function maxTime(a: Time, b: Time): Time {
   return isLessThan(a, b) ? b : a;
 }
 
-// messagePathItems contains the whole parsed message, and we don't need to cache all of that.
-// Instead, throw away everything but what we need (the timestamps).
+/**
+ * Fetch the data we need from each item in itemsByPath and discard the rest of
+ * the message to save memory.
+ */
 const getPlotDataByPath = (itemsByPath: MessageDataItemsByPath): PlotDataByPath => {
   const ret: PlotDataByPath = {};
   Object.entries(itemsByPath).forEach(([path, items]) => {
@@ -54,6 +56,9 @@ const getMessagePathItemsForBlock = memoizeWeak(
   },
 );
 
+/**
+ * Fetch all the plot data we want for our current subscribed topics from blocks.
+ */
 export function getBlockItemsByPath(
   decodeMessagePathsForMessagesByTopic: (_: MessageBlock) => MessageDataItemsByPath,
   blocks: readonly MessageBlock[],
@@ -115,6 +120,9 @@ export function getBlockItemsByPath(
   return ret;
 }
 
+/**
+ * Find the earliest and latest times of messages in data.
+ */
 export const timeRangeForPlotData = memoizeWeak(
   (data: Immutable<PlotDataByPath>): { start: Time; end: Time } => {
     let start: Time = MAX_TIME;
@@ -132,6 +140,10 @@ export const timeRangeForPlotData = memoizeWeak(
   },
 );
 
+/**
+ * Merge two PlotDataByPath objects into a single PlotDataByPath object,
+ * discarding any overlapping messages between the two items.
+ */
 function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPath {
   return assignWith(
     { ...a },
@@ -150,6 +162,11 @@ function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPa
   );
 }
 
+/**
+ * Reduce multiple PlotDataByPath objects into a single PlotDataByPath object,
+ * concatenating messages for each path after trimming messages that overlap
+ * between items.
+ */
 export function reducePlotData(data: PlotDataByPath[]): PlotDataByPath {
   const sorted = data
     .slice()

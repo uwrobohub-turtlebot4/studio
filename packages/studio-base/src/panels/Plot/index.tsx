@@ -16,12 +16,13 @@ import { useTheme } from "@mui/material";
 import { compact, groupBy, isEmpty, isNumber, pick, uniq } from "lodash";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
-import { filterMap } from "@foxglove/den/collection";
 import {
   Time,
   add as addTimes,
   fromSec,
   isLessThan,
+  isTimeInRangeInclusive,
+  subtract,
   subtract as subtractTimes,
   toSec,
 } from "@foxglove/rostime";
@@ -270,7 +271,11 @@ function Plot(props: Props) {
           }
 
           const headerStamp = getTimestampForMessage(msgEvent.message);
-          if (isLessThan(msgEvent.receiveTime, blocksTimeRange.end)) {
+          if (
+            isTimeInRangeInclusive(msgEvent.receiveTime, blocksTimeRange.start, blocksTimeRange.end)
+          ) {
+            // Skip messages that fall within the range of our block data since
+            // we would just filter them out later anyway.
             continue;
           }
           const plotDataItem = {
@@ -292,13 +297,10 @@ function Plot(props: Props) {
 
             // If we are using the _following_ view mode, truncate away any items older than the view window.
             if (lastEventTime && isFollowing) {
-              const minStamp = toSec(lastEventTime) - followingView.width;
-              const newItems = filterMap(plotDataItems, (item) => {
-                if (toSec(item.receiveTime) < minStamp) {
-                  return undefined;
-                }
-                return item;
-              });
+              const minStamp = subtract(lastEventTime, { sec: followingView.width, nsec: 0 });
+              const newItems = plotDataItems.filter(
+                (item) => !isLessThan(item.receiveTime, minStamp),
+              );
               newItems.push(plotDataItem);
               plotDataPath[0] = newItems;
             } else {
@@ -313,7 +315,7 @@ function Plot(props: Props) {
       return newAccumulated ?? accumulated;
     },
     [
-      blocksTimeRange.end,
+      blocksTimeRange,
       cachedGetMessagePathDataItems,
       followingView,
       showSingleCurrentMessage,
