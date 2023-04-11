@@ -3,11 +3,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Immutable } from "immer";
-import { assignWith, isEmpty, last, sortBy } from "lodash";
+import { assignWith, isEmpty, last } from "lodash";
 import memoizeWeak from "memoize-weak";
 
 import { filterMap } from "@foxglove/den/collection";
-import { Time, isGreaterThan, isLessThan } from "@foxglove/rostime";
+import { Time, compare, isGreaterThan, isLessThan } from "@foxglove/rostime";
 import { PlotDataByPath, PlotDataItem } from "@foxglove/studio-base/panels/Plot/internalTypes";
 
 const MAX_TIME = { sec: Infinity, nsec: Infinity };
@@ -46,7 +46,6 @@ function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPa
       if (objValue == undefined) {
         return srcValue;
       }
-      //   return objValue ?? srcValue;
       const lastTime = last(last(objValue))?.receiveTime ?? MIN_TIME;
       const newValues = filterMap(srcValue ?? [], (item) => {
         const laterDatums = item.filter((datum) => isGreaterThan(datum.receiveTime, lastTime));
@@ -58,11 +57,14 @@ function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPa
 }
 
 export function reducePlotData(data: PlotDataByPath[]): PlotDataByPath {
-  const sorted = sortBy(data, memoTimeRangeForPlotData);
-  return sorted.reduce((_acc, item) => {
-    if (isEmpty(_acc)) {
+  const sorted = data
+    .slice()
+    .sort((a, b) => compare(memoTimeRangeForPlotData(a).start, memoTimeRangeForPlotData(b).start));
+  const reduced = sorted.reduce((acc, item) => {
+    if (isEmpty(acc)) {
       return item;
     }
-    return mergePlotDataByPath(_acc, item);
+    return mergePlotDataByPath(acc, item);
   }, {} as PlotDataByPath);
+  return reduced;
 }

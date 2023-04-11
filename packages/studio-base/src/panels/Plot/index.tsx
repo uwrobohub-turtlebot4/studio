@@ -18,12 +18,11 @@ import memoizeWeak from "memoize-weak";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
 import { filterMap } from "@foxglove/den/collection";
-import { useShallowMemo } from "@foxglove/hooks";
 import {
+  Time,
   add as addTimes,
   fromSec,
   subtract as subtractTimes,
-  Time,
   toSec,
 } from "@foxglove/rostime";
 import { MessageEvent } from "@foxglove/studio";
