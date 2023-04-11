@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { Immutable } from "immer";
 import { groupBy, isEmpty, pick } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -22,17 +23,17 @@ import { getTimestampForMessage } from "@foxglove/studio-base/util/time";
 
 type TaggedPlotDataByPath = { tag: string; data: PlotDataByPath };
 
-type Params = {
+type Params = Immutable<{
   allPaths: string[];
   followingView: undefined | ChartDefaultView;
   showSingleCurrentMessage: boolean;
-};
+}>;
 
 /**
  * Combines preloaded block data and messages accumulated during playback into a
  * single PlotDataByPath object.
  */
-export function usePlotPanelMessageData(params: Params): PlotDataByPath {
+export function usePlotPanelMessageData(params: Params): Immutable<PlotDataByPath> {
   const { allPaths, followingView, showSingleCurrentMessage } = params;
 
   // When iterating message events, we need a reverse lookup from topic to the

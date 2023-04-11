@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Immutable } from "immer";
+import { Immutable as Im } from "immer";
 import { assignWith, last, isEmpty } from "lodash";
 import memoizeWeak from "memoize-weak";
 
@@ -27,22 +27,20 @@ function maxTime(a: Time, b: Time): Time {
 /**
  * Find the earliest and latest times of messages in data.
  */
-export const findTimeRange = memoizeWeak(
-  (data: Immutable<PlotDataByPath>): { start: Time; end: Time } => {
-    let start: Time = MAX_TIME;
-    let end: Time = MIN_TIME;
-    for (const path of Object.keys(data)) {
-      for (const item of data[path] ?? []) {
-        for (const datum of item) {
-          start = minTime(start, datum.receiveTime);
-          end = maxTime(end, datum.receiveTime);
-        }
+export const findTimeRange = memoizeWeak((data: Im<PlotDataByPath>): { start: Time; end: Time } => {
+  let start: Time = MAX_TIME;
+  let end: Time = MIN_TIME;
+  for (const path of Object.keys(data)) {
+    for (const item of data[path] ?? []) {
+      for (const datum of item) {
+        start = minTime(start, datum.receiveTime);
+        end = maxTime(end, datum.receiveTime);
       }
     }
+  }
 
-    return { start, end };
-  },
-);
+  return { start, end };
+});
 
 /**
  * Fetch the data we need from each item in itemsByPath and discard the rest of
@@ -142,7 +140,7 @@ export function getBlockItemsByPath(
  * Merge two PlotDataByPath objects into a single PlotDataByPath object,
  * discarding any overlapping messages between the two items.
  */
-function mergeByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPath {
+function mergeByPath(a: Im<PlotDataByPath>, b: Im<PlotDataByPath>): PlotDataByPath {
   return assignWith(
     {},
     a,
@@ -166,15 +164,17 @@ function mergeByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPath {
  * concatenating messages for each path after trimming messages that overlap
  * between items.
  */
-export function combine(data: PlotDataByPath[]): PlotDataByPath {
+export function combine(data: Im<PlotDataByPath[]>): Im<PlotDataByPath> {
   const sorted = data
     .slice()
     .sort((a, b) => compare(findTimeRange(a).start, findTimeRange(b).start));
+
   const reduced = sorted.reduce((acc, item) => {
     if (isEmpty(acc)) {
       return item;
     }
     return mergeByPath(acc, item);
   }, {} as PlotDataByPath);
+
   return reduced;
 }
