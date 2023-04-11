@@ -62,6 +62,7 @@ import { PlotLegend } from "./PlotLegend";
 import { downloadCSV } from "./csv";
 import { getDatasets } from "./datasets";
 import { DataSet, PlotDataByPath, PlotDataItem } from "./internalTypes";
+import { reducePlotData } from "./messages";
 import { usePlotPanelSettings } from "./settings";
 import { PlotConfig } from "./types";
 
@@ -381,9 +382,7 @@ function Plot(props: Props) {
             headerStamp,
           };
 
-          if (!newAccumulated) {
-            newAccumulated = { ...accumulated };
-          }
+          newAccumulated ??= { ...accumulated };
 
           if (showSingleCurrentMessage) {
             newAccumulated.data[path] = [[plotDataItem]];
@@ -419,47 +418,44 @@ function Plot(props: Props) {
     [cachedGetMessagePathDataItems, followingView, showSingleCurrentMessage, topicToPaths],
   );
 
-  // The extra useShallowMemo is useful when seeking. Without it, the reduced value will be reset,
-  // and trigger the plot to re-render even if the old value and new value were both empty ({})
-  // which happens for fully pre-loaded data coming from blocks.
-  const plotDataByPath = useShallowMemo(
-    useMessageReducer<TaggedPlotDataByPath>({
-      topics: subscribeTopics,
-      preloadType: "full",
-      restore,
-      addMessages,
-    }),
-  );
+  const plotDataByPath = useMessageReducer<TaggedPlotDataByPath>({
+    topics: subscribeTopics,
+    preloadType: "full",
+    restore,
+    addMessages,
+  });
 
   const [accumulatedPathIntervals, setAccumulatedPathIntervals] = useState<
-    Record<string, TaggedPlotDataByPath>
+    Record<string, PlotDataByPath>
   >({});
 
   useEffect(() => {
     if (!isEmpty(plotDataByPath.data)) {
       setAccumulatedPathIntervals((oldValue) => ({
         ...oldValue,
-        [plotDataByPath.tag]: plotDataByPath,
+        blocks: plotDataForBlocks,
+        [plotDataByPath.tag]: plotDataByPath.data,
       }));
     }
-  }, [plotDataByPath]);
+  }, [plotDataByPath, plotDataForBlocks]);
 
-  console.log({ accumulatedPathIntervals });
+  const reducedPlotData = useMemo(
+    () => reducePlotData(Object.values(accumulatedPathIntervals)),
+    [accumulatedPathIntervals],
+  );
 
   // Keep disabled paths when passing into getDatasets, because we still want
   // easy access to the history when turning the disabled paths back on.
   const { datasets, pathsWithMismatchedDataLengths } = useMemo(() => {
-    const allPlotData = { ...plotDataByPath.data, ...plotDataForBlocks };
-
     return getDatasets({
       paths: yAxisPaths,
-      itemsByPath: allPlotData,
+      itemsByPath: reducedPlotData,
       startTime: startTime ?? ZERO_TIME,
       xAxisVal,
       xAxisPath,
       invertedTheme: theme.palette.mode === "dark",
     });
-  }, [plotDataByPath, plotDataForBlocks, yAxisPaths, startTime, xAxisVal, xAxisPath, theme]);
+  }, [yAxisPaths, reducedPlotData, startTime, xAxisVal, xAxisPath, theme.palette.mode]);
 
   const tooltips = useMemo(() => {
     if (showLegend && showPlotValuesInLegend) {
