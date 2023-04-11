@@ -13,7 +13,7 @@
 
 import DownloadIcon from "@mui/icons-material/Download";
 import { useTheme } from "@mui/material";
-import { compact, isEmpty, isNumber, pick, uniq } from "lodash";
+import { compact, groupBy, isEmpty, isNumber, pick, uniq } from "lodash";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
 import { filterMap } from "@foxglove/den/collection";
@@ -21,6 +21,7 @@ import {
   Time,
   add as addTimes,
   fromSec,
+  isLessThan,
   subtract as subtractTimes,
   toSec,
 } from "@foxglove/rostime";
@@ -58,7 +59,7 @@ import { PlotLegend } from "./PlotLegend";
 import { downloadCSV } from "./csv";
 import { getDatasets } from "./datasets";
 import { DataSet, PlotDataByPath } from "./internalTypes";
-import { getBlockItemsByPath, reducePlotData } from "./messages";
+import { getBlockItemsByPath, reducePlotData, timeRangeForPlotData } from "./messages";
 import { usePlotPanelSettings } from "./settings";
 import { PlotConfig } from "./types";
 
@@ -201,12 +202,7 @@ function Plot(props: Props) {
 
   // following view and fixed view are split to keep defaultView identity stable when possible
   const defaultView = useMemo<ChartDefaultView | undefined>(() => {
-    if (followingView) {
-      return followingView;
-    } else if (fixedView) {
-      return fixedView;
-    }
-    return undefined;
+    return followingView ?? fixedView ?? undefined;
   }, [fixedView, followingView]);
 
   const allPaths = useMemo(() => {
@@ -220,19 +216,10 @@ function Plot(props: Props) {
 
   // When iterating message events, we need a reverse lookup from topic to the paths that requested
   // the topic.
-  const topicToPaths = useMemo<Map<string, string[]>>(() => {
-    const out = new Map<string, string[]>();
-    for (const path of allPaths) {
-      const rosPath = parseRosPath(path);
-      if (!rosPath) {
-        continue;
-      }
-      const existing = out.get(rosPath.topicName) ?? [];
-      existing.push(path);
-      out.set(rosPath.topicName, existing);
-    }
-    return out;
-  }, [allPaths]);
+  const topicToPaths = useMemo(
+    () => groupBy(allPaths, (path) => parseRosPath(path)?.topicName),
+    [allPaths],
+  );
 
   const blocks = useBlocksByTopic(subscribeTopics);
 
@@ -245,6 +232,8 @@ function Plot(props: Props) {
     }
     return getBlockItemsByPath(decodeMessagePathsForMessagesByTopic, blocks);
   }, [blocks, decodeMessagePathsForMessagesByTopic, showSingleCurrentMessage]);
+
+  const blocksTimeRange = timeRangeForPlotData(plotDataForBlocks);
 
   // When restoring, keep only the paths that are present in allPaths.
   // Without this, the reducer value will grow unbounded with new paths as users add/remove series.
@@ -269,7 +258,7 @@ function Plot(props: Props) {
       let newAccumulated: TaggedPlotDataByPath | undefined;
 
       for (const msgEvent of msgEvents) {
-        const paths = topicToPaths.get(msgEvent.topic);
+        const paths = topicToPaths[msgEvent.topic];
         if (!paths) {
           continue;
         }
@@ -281,6 +270,9 @@ function Plot(props: Props) {
           }
 
           const headerStamp = getTimestampForMessage(msgEvent.message);
+          if (isLessThan(msgEvent.receiveTime, blocksTimeRange.end)) {
+            continue;
+          }
           const plotDataItem = {
             queriedData: dataItem,
             receiveTime: msgEvent.receiveTime,
@@ -320,7 +312,13 @@ function Plot(props: Props) {
 
       return newAccumulated ?? accumulated;
     },
-    [cachedGetMessagePathDataItems, followingView, showSingleCurrentMessage, topicToPaths],
+    [
+      blocksTimeRange.end,
+      cachedGetMessagePathDataItems,
+      followingView,
+      showSingleCurrentMessage,
+      topicToPaths,
+    ],
   );
 
   const plotDataByPath = useMessageReducer<TaggedPlotDataByPath>({

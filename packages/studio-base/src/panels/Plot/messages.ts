@@ -115,22 +115,22 @@ export function getBlockItemsByPath(
   return ret;
 }
 
-function timeRangeForPlotData(data: Immutable<PlotDataByPath>): { start: Time; end: Time } {
-  let start: Time = MAX_TIME;
-  let end: Time = MIN_TIME;
-  for (const path of Object.keys(data)) {
-    for (const item of data[path] ?? []) {
-      for (const datum of item) {
-        start = minTime(start, datum.receiveTime);
-        end = maxTime(end, datum.receiveTime);
+export const timeRangeForPlotData = memoizeWeak(
+  (data: Immutable<PlotDataByPath>): { start: Time; end: Time } => {
+    let start: Time = MAX_TIME;
+    let end: Time = MIN_TIME;
+    for (const path of Object.keys(data)) {
+      for (const item of data[path] ?? []) {
+        for (const datum of item) {
+          start = minTime(start, datum.receiveTime);
+          end = maxTime(end, datum.receiveTime);
+        }
       }
     }
-  }
 
-  return { start, end };
-}
-
-const memoTimeRangeForPlotData = memoizeWeak(timeRangeForPlotData);
+    return { start, end };
+  },
+);
 
 function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPath {
   return assignWith(
@@ -153,7 +153,7 @@ function mergePlotDataByPath(a: PlotDataByPath, b: PlotDataByPath): PlotDataByPa
 export function reducePlotData(data: PlotDataByPath[]): PlotDataByPath {
   const sorted = data
     .slice()
-    .sort((a, b) => compare(memoTimeRangeForPlotData(a).start, memoTimeRangeForPlotData(b).start));
+    .sort((a, b) => compare(timeRangeForPlotData(a).start, timeRangeForPlotData(b).start));
   const reduced = sorted.reduce((acc, item) => {
     if (isEmpty(acc)) {
       return item;
