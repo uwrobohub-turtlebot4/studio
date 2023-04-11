@@ -13,28 +13,16 @@
 
 import DownloadIcon from "@mui/icons-material/Download";
 import { useTheme } from "@mui/material";
-import { compact, groupBy, isEmpty, isNumber, pick, uniq } from "lodash";
+import { compact, isNumber, uniq } from "lodash";
 import { ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   Time,
   add as addTimes,
   fromSec,
-  isLessThan,
-  isTimeInRangeInclusive,
-  subtract,
   subtract as subtractTimes,
   toSec,
 } from "@foxglove/rostime";
-import { MessageEvent } from "@foxglove/studio";
-import { useBlocksByTopic, useMessageReducer } from "@foxglove/studio-base/PanelAPI";
-import parseRosPath, {
-  getTopicsFromPaths,
-} from "@foxglove/studio-base/components/MessagePathSyntax/parseRosPath";
-import {
-  useCachedGetMessagePathDataItems,
-  useDecodeMessagePathsForMessagesByTopic,
-} from "@foxglove/studio-base/components/MessagePathSyntax/useCachedGetMessagePathDataItems";
 import {
   MessagePipelineContext,
   useMessagePipeline,
@@ -50,17 +38,16 @@ import {
   ChartDefaultView,
   TimeBasedChartTooltipData,
 } from "@foxglove/studio-base/components/TimeBasedChart";
+import { usePlotPanelMessageData } from "@foxglove/studio-base/panels/Plot/usePlotPanelMessageData";
 import { OnClickArg as OnChartClickArgs } from "@foxglove/studio-base/src/components/Chart";
 import { OpenSiblingPanel, PanelConfig, SaveConfig } from "@foxglove/studio-base/types/panels";
 import { PANEL_TITLE_CONFIG_KEY } from "@foxglove/studio-base/util/layout";
-import { getTimestampForMessage } from "@foxglove/studio-base/util/time";
 
 import PlotChart from "./PlotChart";
 import { PlotLegend } from "./PlotLegend";
 import { downloadCSV } from "./csv";
 import { getDatasets } from "./datasets";
-import { DataSet, PlotDataByPath } from "./internalTypes";
-import { getBlockItemsByPath, reducePlotData, timeRangeForPlotData } from "./messages";
+import { DataSet } from "./internalTypes";
 import { usePlotPanelSettings } from "./settings";
 import { PlotConfig } from "./types";
 
@@ -90,8 +77,6 @@ type Props = {
 };
 
 const ZERO_TIME = { sec: 0, nsec: 0 };
-
-type TaggedPlotDataByPath = { tag: string; data: PlotDataByPath };
 
 /**
  * Builds a lookup map of a compound x:y:index key to a datum, used to map hovered positions
@@ -210,157 +195,24 @@ function Plot(props: Props) {
     return yAxisPaths.map(({ value }) => value).concat(compact([xAxisPath?.value]));
   }, [xAxisPath?.value, yAxisPaths]);
 
-  const subscribeTopics = useMemo(() => getTopicsFromPaths(allPaths), [allPaths]);
-
-  const cachedGetMessagePathDataItems = useCachedGetMessagePathDataItems(allPaths);
-  const decodeMessagePathsForMessagesByTopic = useDecodeMessagePathsForMessagesByTopic(allPaths);
-
-  // When iterating message events, we need a reverse lookup from topic to the paths that requested
-  // the topic.
-  const topicToPaths = useMemo(
-    () => groupBy(allPaths, (path) => parseRosPath(path)?.topicName),
-    [allPaths],
-  );
-
-  const blocks = useBlocksByTopic(subscribeTopics);
-
-  // This memoization isn't quite ideal: getDatasets is a bit expensive with lots of preloaded data,
-  // and when we preload a new block we re-generate the datasets for the whole timeline. We could
-  // try to use block memoization here.
-  const plotDataForBlocks = useMemo(() => {
-    if (showSingleCurrentMessage) {
-      return {};
-    }
-    return getBlockItemsByPath(decodeMessagePathsForMessagesByTopic, blocks);
-  }, [blocks, decodeMessagePathsForMessagesByTopic, showSingleCurrentMessage]);
-
-  const blocksTimeRange = timeRangeForPlotData(plotDataForBlocks);
-
-  // When restoring, keep only the paths that are present in allPaths.
-  // Without this, the reducer value will grow unbounded with new paths as users add/remove series.
-  const restore = useCallback(
-    (previous?: TaggedPlotDataByPath): TaggedPlotDataByPath => {
-      if (!previous) {
-        return { tag: new Date().toISOString(), data: {} };
-      }
-
-      return { ...previous, data: pick(previous.data, allPaths) };
-    },
-    [allPaths],
-  );
-
-  const addMessages = useCallback(
-    (accumulated: TaggedPlotDataByPath, msgEvents: readonly MessageEvent<unknown>[]) => {
-      const lastEventTime = msgEvents[msgEvents.length - 1]?.receiveTime;
-      const isFollowing = followingView?.type === "following";
-
-      // If we don't change any accumulated data, avoid returning a new "accumulated" object so
-      // react hooks remain stable.
-      let newAccumulated: TaggedPlotDataByPath | undefined;
-
-      for (const msgEvent of msgEvents) {
-        const paths = topicToPaths[msgEvent.topic];
-        if (!paths) {
-          continue;
-        }
-
-        for (const path of paths) {
-          const dataItem = cachedGetMessagePathDataItems(path, msgEvent);
-          if (!dataItem) {
-            continue;
-          }
-
-          const headerStamp = getTimestampForMessage(msgEvent.message);
-          if (
-            isTimeInRangeInclusive(msgEvent.receiveTime, blocksTimeRange.start, blocksTimeRange.end)
-          ) {
-            // Skip messages that fall within the range of our block data since
-            // we would just filter them out later anyway.
-            continue;
-          }
-          const plotDataItem = {
-            queriedData: dataItem,
-            receiveTime: msgEvent.receiveTime,
-            headerStamp,
-          };
-
-          newAccumulated ??= { ...accumulated };
-
-          if (showSingleCurrentMessage) {
-            newAccumulated.data[path] = [[plotDataItem]];
-          } else {
-            const plotDataPath = newAccumulated.data[path]?.slice() ?? [[]];
-            // PlotDataPaths have 2d arrays of items to accommodate blocks which may have gaps so
-            // each continuous set of blocks forms one continuous line. For streaming messages we
-            // treat this as one continuous set of items and always add to the first "range"
-            const plotDataItems = plotDataPath[0]!;
-
-            // If we are using the _following_ view mode, truncate away any items older than the view window.
-            if (lastEventTime && isFollowing) {
-              const minStamp = subtract(lastEventTime, { sec: followingView.width, nsec: 0 });
-              const newItems = plotDataItems.filter(
-                (item) => !isLessThan(item.receiveTime, minStamp),
-              );
-              newItems.push(plotDataItem);
-              plotDataPath[0] = newItems;
-            } else {
-              plotDataPath[0] = plotDataItems.concat(plotDataItem);
-            }
-
-            newAccumulated.data[path] = plotDataPath;
-          }
-        }
-      }
-
-      return newAccumulated ?? accumulated;
-    },
-    [
-      blocksTimeRange,
-      cachedGetMessagePathDataItems,
-      followingView,
-      showSingleCurrentMessage,
-      topicToPaths,
-    ],
-  );
-
-  const plotDataByPath = useMessageReducer<TaggedPlotDataByPath>({
-    topics: subscribeTopics,
-    preloadType: "full",
-    restore,
-    addMessages,
+  const combinedPlotData = usePlotPanelMessageData({
+    allPaths,
+    followingView,
+    showSingleCurrentMessage,
   });
-
-  const [accumulatedPathIntervals, setAccumulatedPathIntervals] = useState<
-    Record<string, PlotDataByPath>
-  >({});
-
-  useEffect(() => {
-    if (!isEmpty(plotDataByPath.data)) {
-      setAccumulatedPathIntervals((oldValue) => ({
-        ...oldValue,
-        blocks: plotDataForBlocks,
-        [plotDataByPath.tag]: plotDataByPath.data,
-      }));
-    }
-  }, [plotDataByPath, plotDataForBlocks]);
-
-  const reducedPlotData = useMemo(
-    () => reducePlotData(Object.values(accumulatedPathIntervals)),
-    [accumulatedPathIntervals],
-  );
 
   // Keep disabled paths when passing into getDatasets, because we still want
   // easy access to the history when turning the disabled paths back on.
   const { datasets, pathsWithMismatchedDataLengths } = useMemo(() => {
     return getDatasets({
       paths: yAxisPaths,
-      itemsByPath: reducedPlotData,
+      itemsByPath: combinedPlotData,
       startTime: startTime ?? ZERO_TIME,
       xAxisVal,
       xAxisPath,
       invertedTheme: theme.palette.mode === "dark",
     });
-  }, [yAxisPaths, reducedPlotData, startTime, xAxisVal, xAxisPath, theme.palette.mode]);
+  }, [yAxisPaths, combinedPlotData, startTime, xAxisVal, xAxisPath, theme.palette.mode]);
 
   const tooltips = useMemo(() => {
     if (showLegend && showPlotValuesInLegend) {
