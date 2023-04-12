@@ -10,11 +10,10 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { Link, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { extname } from "path";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { makeStyles } from "tss-react/mui";
 
 import Logger from "@foxglove/log";
@@ -28,7 +27,6 @@ import { TopicList } from "@foxglove/studio-base/components/DataSourceSidebar/To
 import DocumentDropListener from "@foxglove/studio-base/components/DocumentDropListener";
 import ExtensionsSettings from "@foxglove/studio-base/components/ExtensionsSettings";
 import KeyListener from "@foxglove/studio-base/components/KeyListener";
-import LayoutBrowser from "@foxglove/studio-base/components/LayoutBrowser";
 import {
   MessagePipelineContext,
   useMessagePipeline,
@@ -53,10 +51,7 @@ import {
 import { SyncAdapters } from "@foxglove/studio-base/components/SyncAdapters";
 import VariablesList from "@foxglove/studio-base/components/VariablesList";
 import { WorkspaceDialogs } from "@foxglove/studio-base/components/WorkspaceDialogs";
-import {
-  LayoutState,
-  useCurrentLayoutSelector,
-} from "@foxglove/studio-base/context/CurrentLayoutContext";
+import { useAppContext } from "@foxglove/studio-base/context/AppContext";
 import { useCurrentUser } from "@foxglove/studio-base/context/CurrentUserContext";
 import { EventsStore, useEvents } from "@foxglove/studio-base/context/EventsContext";
 import { useExtensionCatalog } from "@foxglove/studio-base/context/ExtensionCatalogContext";
@@ -99,8 +94,6 @@ const useStyles = makeStyles()({
   },
 });
 
-const selectedLayoutIdSelector = (state: LayoutState) => state.selectedLayout?.id;
-
 function activeElementIsInput() {
   return (
     document.activeElement instanceof HTMLInputElement ||
@@ -118,25 +111,11 @@ function keyboardEventHasModifier(event: KeyboardEvent) {
 
 function AddPanel() {
   const addPanel = useAddPanel();
-  const { openLayoutBrowser } = useWorkspaceActions();
-  const selectedLayoutId = useCurrentLayoutSelector(selectedLayoutIdSelector);
   const { t } = useTranslation("addPanel");
 
   return (
-    <SidebarContent disablePadding={selectedLayoutId != undefined} title={t("addPanel")}>
-      {selectedLayoutId == undefined ? (
-        <Typography color="text.secondary">
-          <Trans
-            t={t}
-            i18nKey="noLayoutSelected"
-            components={{
-              selectLayoutLink: <Link onClick={openLayoutBrowser} />,
-            }}
-          />
-        </Typography>
-      ) : (
-        <PanelList onPanelSelect={addPanel} />
-      )}
+    <SidebarContent disablePadding title={t("addPanel")}>
+      <PanelList onPanelSelect={addPanel} />
     </SidebarContent>
   );
 }
@@ -216,6 +195,8 @@ function WorkspaceContent(props: WorkspaceProps): JSX.Element {
   // see comment below above the RemountOnValueChange component
   const playerId = useMessagePipeline(selectPlayerId);
 
+  const { panelLayout } = useAppContext();
+
   const isPlayerPresent = playerPresence !== PlayerPresence.NOT_PRESENT;
 
   const { currentUser, signIn } = useCurrentUser();
@@ -262,13 +243,6 @@ function WorkspaceContent(props: WorkspaceProps): JSX.Element {
       containerRef.current.focus();
     }
   }, []);
-
-  useNativeAppMenuEvent(
-    "open-layouts",
-    useCallback(() => {
-      selectSidebarItem("layouts");
-    }, [selectSidebarItem]),
-  );
 
   useNativeAppMenuEvent(
     "open-add-panel",
@@ -498,11 +472,6 @@ function WorkspaceContent(props: WorkspaceProps): JSX.Element {
     ]);
 
     if (!enableNewTopNav) {
-      topItems.set("layouts", {
-        iconName: "FiveTileGrid",
-        title: "Layouts",
-        component: LayoutBrowser,
-      });
       topItems.set("add-panel", {
         iconName: "RectangularClipping",
         title: "Add panel",
@@ -662,9 +631,7 @@ function WorkspaceContent(props: WorkspaceProps): JSX.Element {
         >
           {/* To ensure no stale player state remains, we unmount all panels when players change */}
           <RemountOnValueChange value={playerId}>
-            <Stack>
-              <PanelLayout />
-            </Stack>
+            <Stack>{panelLayout ?? <PanelLayout />}</Stack>
           </RemountOnValueChange>
         </Sidebars>
         {play && pause && seek && (

@@ -12,7 +12,6 @@ import { selectWithUnstableIdentityWarning } from "@foxglove/studio-base/hooks/s
 import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import useShouldNotChangeOften from "@foxglove/studio-base/hooks/useShouldNotChangeOften";
 import toggleSelectedPanel from "@foxglove/studio-base/providers/CurrentLayoutProvider/toggleSelectedPanel";
-import { LayoutID } from "@foxglove/studio-base/services/ILayoutStorage";
 import { PanelConfig, PlaybackConfig, UserNodes } from "@foxglove/studio-base/types/panels";
 
 import {
@@ -30,11 +29,13 @@ import {
   SwapPanelPayload,
 } from "./actions";
 
+export type LayoutID = string & { __brand: "LayoutID" };
+
 export type LayoutState = Readonly<{
   selectedLayout:
     | {
         id: LayoutID;
-        loading?: boolean;
+        loading?: boolean; // fixme? needed
         data: LayoutData | undefined;
         name?: string;
       }
@@ -68,9 +69,7 @@ export interface ICurrentLayout {
      * asynchronously and don't want to update every time the state changes.
      */
     getCurrentLayoutState: () => LayoutState;
-
-    setSelectedLayoutId: (id: LayoutID | undefined) => void;
-
+    setCurrentLayoutData: (data: LayoutData) => void;
     savePanelConfigs: (payload: SaveConfigsPayload) => void;
     updatePanelConfigs: (panelType: string, updater: (config: PanelConfig) => PanelConfig) => void;
     createTabPanel: (payload: CreateTabPanelPayload) => void;

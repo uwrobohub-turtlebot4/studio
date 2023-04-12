@@ -4,9 +4,11 @@
 
 import { URLStateSyncAdapter } from "@foxglove/studio-base/components/URLStateSyncAdapter";
 import { useAppContext } from "@foxglove/studio-base/context/AppContext";
+import { IdbLayoutSaver } from "@foxglove/studio-base/providers/CurrentLayoutProvider/IdbLayoutSaver";
 
 export function SyncAdapters(): JSX.Element {
-  const { syncAdapters = [] } = useAppContext();
+  const { syncAdapters = [<IdbLayoutSaver key="core-idb" />] } = useAppContext();
+
   return (
     <>
       {...syncAdapters}

@@ -19,7 +19,6 @@ export type SidebarItemKey =
   | "connection"
   | "extensions"
   | "help"
-  | "layouts"
   | "panel-settings"
   | "preferences"
   | "studio-logs-settings"
@@ -74,7 +73,6 @@ export function useWorkspaceStore<T>(
 export type WorkspaceActions = {
   openAccountSettings: () => void;
   openPanelSettings: () => void;
-  openLayoutBrowser: () => void;
   prefsDialogActions: {
     close: () => void;
     open: (initialTab?: PreferencesDialogTab) => void;
@@ -119,8 +117,6 @@ export function useWorkspaceActions(): WorkspaceActions {
         enableNewTopNav
           ? set({ leftSidebarItem: "panel-settings", leftSidebarOpen: true })
           : set({ sidebarItem: "panel-settings" }),
-
-      openLayoutBrowser: () => set({ sidebarItem: "layouts" }),
 
       prefsDialogActions: {
         close: () => set({ prefsDialogState: { open: false, initialTab: undefined } }),

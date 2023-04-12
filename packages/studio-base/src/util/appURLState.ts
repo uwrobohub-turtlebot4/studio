@@ -5,11 +5,12 @@
 import { isEmpty, omitBy } from "lodash";
 
 import { fromRFC3339String, toRFC3339String, Time } from "@foxglove/rostime";
-import { LayoutID } from "@foxglove/studio-base/index";
+import { LayoutID } from "@foxglove/studio-base/context/CurrentLayoutContext";
 
 export type AppURLState = {
   ds?: string;
   dsParams?: Record<string, string>;
+  // fixme - should this remain?
   layoutId?: LayoutID;
   time?: Time;
 };
@@ -24,6 +25,7 @@ export type AppURLState = {
 export function updateAppURLState(url: URL, urlState: AppURLState): URL {
   const newURL = new URL(url.href);
 
+  // fixme - should this remain?
   if ("layoutId" in urlState) {
     if (urlState.layoutId) {
       newURL.searchParams.set("layoutId", urlState.layoutId);

@@ -21,10 +21,8 @@ import { MessagePipelineProvider } from "@foxglove/studio-base/components/Messag
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
 import {
   LayoutState,
-  useCurrentLayoutActions,
   useCurrentLayoutSelector,
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
-import { useLayoutManager } from "@foxglove/studio-base/context/LayoutManagerContext";
 import { useNativeWindow } from "@foxglove/studio-base/context/NativeWindowContext";
 import PlayerSelectionContext, {
   DataSourceArgs,
@@ -74,9 +72,6 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
 
   const analytics = useAnalytics();
   const metricsCollector = useMemo(() => new AnalyticsMetricsCollector(analytics), [analytics]);
-
-  const layoutStorage = useLayoutManager();
-  const { setSelectedLayoutId } = useCurrentLayoutActions();
 
   const [basePlayer, setBasePlayer] = useState<Player | undefined>();
 
@@ -134,6 +129,7 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
 
         if (foundSource.sampleLayout) {
           try {
+            /* fixme
             const layouts = await layoutStorage.getLayouts();
             let sourceLayout = layouts.find((layout) => layout.name === foundSource.displayName);
             if (sourceLayout == undefined) {
@@ -144,9 +140,11 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
               });
             }
 
+
             if (isMounted()) {
               setSelectedLayoutId(sourceLayout.id);
             }
+                   */
           } catch (err) {
             enqueueSnackbar((err as Error).message, { variant: "error" });
           }
@@ -257,16 +255,7 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
         enqueueSnackbar((error as Error).message, { variant: "error" });
       }
     },
-    [
-      playerSources,
-      metricsCollector,
-      enqueueSnackbar,
-      layoutStorage,
-      isMounted,
-      setSelectedLayoutId,
-      addRecent,
-      nativeWindow,
-    ],
+    [playerSources, metricsCollector, enqueueSnackbar, isMounted, addRecent, nativeWindow],
   );
 
   // Select a recent entry by id

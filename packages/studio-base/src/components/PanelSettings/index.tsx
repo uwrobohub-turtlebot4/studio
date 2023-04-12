@@ -2,9 +2,9 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Link, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 
 import { SettingsTree } from "@foxglove/studio";
@@ -26,13 +26,10 @@ import {
   PanelStateStore,
   usePanelStateStore,
 } from "@foxglove/studio-base/context/PanelStateContext";
-import { useWorkspaceActions } from "@foxglove/studio-base/context/WorkspaceContext";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks";
 import { PanelConfig } from "@foxglove/studio-base/types/panels";
 import { TAB_PANEL_TYPE } from "@foxglove/studio-base/util/globalConstants";
 import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
-
-const selectedLayoutIdSelector = (state: LayoutState) => state.selectedLayout?.id;
 
 const singlePanelIdSelector = (state: LayoutState) =>
   typeof state.selectedLayout?.data?.layout === "string"
@@ -54,7 +51,6 @@ export default function PanelSettings({
   selectedPanelIdsForTests?: readonly string[];
 }>): JSX.Element {
   const { t } = useTranslation("panelSettings");
-  const selectedLayoutId = useCurrentLayoutSelector(selectedLayoutIdSelector);
   const singlePanelId = useCurrentLayoutSelector(singlePanelIdSelector);
   const {
     selectedPanelIds: originalSelectedPanelIds,
@@ -72,7 +68,6 @@ export default function PanelSettings({
     }
   }, [selectAllPanels, selectedPanelIds, singlePanelId]);
 
-  const { openLayoutBrowser } = useWorkspaceActions();
   const selectedPanelId = useMemo(
     () => (selectedPanelIds.length === 1 ? selectedPanelIds[0] : undefined),
     [selectedPanelIds],
@@ -140,22 +135,6 @@ export default function PanelSettings({
       incrementSequenceNumber(selectedPanelId);
     }
   }, [incrementSequenceNumber, savePanelConfigs, selectedPanelId]);
-
-  if (selectedLayoutId == undefined) {
-    return (
-      <SidebarContent disableToolbar={disableToolbar} title={t("panelSettings")}>
-        <Typography color="text.secondary">
-          <Trans
-            t={t}
-            i18nKey="noLayoutSelected"
-            components={{
-              selectLayoutLink: <Link onClick={openLayoutBrowser} />,
-            }}
-          />
-        </Typography>
-      </SidebarContent>
-    );
-  }
 
   if (selectedPanelId == undefined) {
     return (

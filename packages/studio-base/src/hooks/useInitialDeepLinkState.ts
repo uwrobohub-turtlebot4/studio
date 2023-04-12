@@ -9,7 +9,6 @@ import {
   MessagePipelineContext,
   useMessagePipeline,
 } from "@foxglove/studio-base/components/MessagePipeline";
-import { useCurrentLayoutActions } from "@foxglove/studio-base/context/CurrentLayoutContext";
 import { useCurrentUser } from "@foxglove/studio-base/context/CurrentUserContext";
 import { EventsStore, useEvents } from "@foxglove/studio-base/context/EventsContext";
 import { usePlayerSelection } from "@foxglove/studio-base/context/PlayerSelectionContext";
@@ -74,7 +73,6 @@ function useSyncLayoutFromUrl(
   targetUrlState: AppURLState | undefined,
   { currentUserRequired }: { currentUserRequired: boolean },
 ) {
-  const { setSelectedLayoutId } = useCurrentLayoutActions();
   const playerPresence = useMessagePipeline(selectPlayerPresence);
   const [unappliedLayoutArgs, setUnappliedLayoutArgs] = useState(
     targetUrlState ? { layoutId: targetUrlState.layoutId } : undefined,
@@ -93,9 +91,8 @@ function useSyncLayoutFromUrl(
     }
 
     log.debug(`Initializing layout from url: ${unappliedLayoutArgs.layoutId}`);
-    setSelectedLayoutId(unappliedLayoutArgs.layoutId);
     setUnappliedLayoutArgs({ layoutId: undefined });
-  }, [currentUserRequired, playerPresence, setSelectedLayoutId, unappliedLayoutArgs?.layoutId]);
+  }, [currentUserRequired, playerPresence, unappliedLayoutArgs?.layoutId]);
 }
 
 function useSyncTimeFromUrl(targetUrlState: AppURLState | undefined) {

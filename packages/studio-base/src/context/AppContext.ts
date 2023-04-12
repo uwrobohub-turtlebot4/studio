@@ -7,6 +7,7 @@ import { createContext, useContext } from "react";
 interface IAppContext {
   appBarLayoutButton?: JSX.Element;
   syncAdapters?: readonly JSX.Element[];
+  panelLayout?: JSX.Element;
   createEvent?: (args: {
     deviceId: string;
     timestamp: string;
