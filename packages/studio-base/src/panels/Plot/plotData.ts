@@ -7,7 +7,7 @@ import { assignWith, last, isEmpty } from "lodash";
 import memoizeWeak from "memoize-weak";
 
 import { filterMap } from "@foxglove/den/collection";
-import { Time, isLessThan, isGreaterThan, compare } from "@foxglove/rostime";
+import { Time, isLessThan, isGreaterThan, compare as compareTimes } from "@foxglove/rostime";
 import { MessageBlock } from "@foxglove/studio-base/PanelAPI/useBlocksByTopic";
 import { MessageDataItemsByPath } from "@foxglove/studio-base/components/MessagePathSyntax/useCachedGetMessagePathDataItems";
 import { PlotDataByPath, PlotDataItem } from "@foxglove/studio-base/panels/Plot/internalTypes";
@@ -140,7 +140,7 @@ export function getBlockItemsByPath(
  * Merge two PlotDataByPath objects into a single PlotDataByPath object,
  * discarding any overlapping messages between the two items.
  */
-function mergeByPath(a: Im<PlotDataByPath>, b: Im<PlotDataByPath>): PlotDataByPath {
+function mergeByPath(a: Im<PlotDataByPath>, b: Im<PlotDataByPath>): Im<PlotDataByPath> {
   return assignWith(
     {},
     a,
@@ -159,15 +159,26 @@ function mergeByPath(a: Im<PlotDataByPath>, b: Im<PlotDataByPath>): PlotDataByPa
   );
 }
 
+// Order plot data first by earliest start time, then by latest end time since
+// our first element when combining will be coming from blocks is likely to
+// overlap more than individual playback segments.
+function compare(a: Im<PlotDataByPath>, b: Im<PlotDataByPath>): number {
+  const rangeA = findTimeRange(a);
+  const rangeB = findTimeRange(b);
+  const startCompare = compareTimes(rangeA.start, rangeB.start);
+  if (startCompare !== 0) {
+    return startCompare;
+  }
+  return compareTimes(rangeB.end, rangeA.end);
+}
+
 /**
  * Reduce multiple PlotDataByPath objects into a single PlotDataByPath object,
  * concatenating messages for each path after trimming messages that overlap
  * between items.
  */
 export function combine(data: Im<PlotDataByPath[]>): Im<PlotDataByPath> {
-  const sorted = data
-    .slice()
-    .sort((a, b) => compare(findTimeRange(a).start, findTimeRange(b).start));
+  const sorted = data.slice().sort(compare);
 
   const reduced = sorted.reduce((acc, item) => {
     if (isEmpty(acc)) {

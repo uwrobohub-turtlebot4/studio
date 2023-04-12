@@ -104,7 +104,9 @@ export function usePlotPanelMessageData(params: Params): Immutable<PlotDataByPat
             isTimeInRangeInclusive(msgEvent.receiveTime, blocksTimeRange.start, blocksTimeRange.end)
           ) {
             // Skip messages that fall within the range of our block data since
-            // we would just filter them out later anyway.
+            // we would just filter them out later anyway. Note that this
+            // assumes blocks are loaded contiguously starting from the
+            // beginning of message data.
             continue;
           }
           const plotDataItem = {
