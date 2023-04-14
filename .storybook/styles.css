@@ -8,8 +8,15 @@
   caret-color: transparent !important;
 }
 
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
 body {
   height: 100vh;
+  box-sizing: border-box;
 }
 
 #root {
