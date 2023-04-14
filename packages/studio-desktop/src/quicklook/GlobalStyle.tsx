@@ -4,8 +4,6 @@
 
 import { GlobalStyles } from "tss-react";
 
-import { BODY_PADDING } from "./styleConstants";
-
 export function GlobalStyle(): JSX.Element {
   return (
     <GlobalStyles
@@ -24,7 +22,6 @@ export function GlobalStyle(): JSX.Element {
           },
         },
         body: {
-          padding: `${BODY_PADDING}px !important`, // important for Storybook
           minWidth: 150,
           fontFamily: "ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif",
 

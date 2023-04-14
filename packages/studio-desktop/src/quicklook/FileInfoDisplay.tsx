@@ -37,6 +37,7 @@ const useStyles = makeStyles()(() => ({
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    padding: BODY_PADDING,
   },
   header: {
     display: "flex",
