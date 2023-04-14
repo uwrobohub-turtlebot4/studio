@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 
 import { Condvar } from "@foxglove/den/async";
 import CssBaseline from "@foxglove/studio-base/components/CssBaseline";
-import GlobalCss from "@foxglove/studio-base/components/GlobalCss";
 import MultiProvider from "@foxglove/studio-base/components/MultiProvider";
 import StudioToastProvider from "@foxglove/studio-base/components/StudioToastProvider";
 import AppConfigurationContext from "@foxglove/studio-base/context/AppConfigurationContext";
@@ -106,7 +105,6 @@ function StudioContextProviders({
             value={needsCombinedReadySignal ? readySignal1 : readySignal}
           >
             <ThemeProvider isDark={false}>
-              <GlobalCss />
               <CssBaseline>
                 <MultiProvider providers={providers}>{children}</MultiProvider>
               </CssBaseline>
@@ -128,7 +126,6 @@ function StudioContextProviders({
             value={needsCombinedReadySignal ? readySignal2 : readySignal}
           >
             <ThemeProvider isDark={true}>
-              <GlobalCss />
               <CssBaseline>
                 <MultiProvider providers={providers}>{children}</MultiProvider>
               </CssBaseline>

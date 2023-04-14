@@ -8,7 +8,7 @@ import { GlobalStyles } from "@mui/material";
 export default function GlobalCss(): JSX.Element {
   return (
     <GlobalStyles
-      styles={{
+      styles={(theme) => ({
         "html, body": {
           boxSizing: "border-box",
           margin: 0,
@@ -23,7 +23,13 @@ export default function GlobalCss(): JSX.Element {
           boxSizing: "inherit",
         },
         body: {
+          background: theme.palette.background.default,
+          color: theme.palette.text.primary,
           font: "inherit",
+          fontFamily: theme.typography.body2.fontFamily,
+          fontFeatureSettings: theme.typography.body2.fontFeatureSettings,
+          fontSize: theme.typography.body2.fontSize,
+          fontWeight: theme.typography.body2.fontWeight,
 
           // Prevent scroll "bouncing" since the app workspace is not scrollable. Allows individual
           // scrollable elements to be scrolled without the whole page moving (even if they don't
@@ -41,7 +47,7 @@ export default function GlobalCss(): JSX.Element {
           overflow: "hidden",
           zIndex: 0,
         },
-      }}
+      })}
     />
   );
 }
