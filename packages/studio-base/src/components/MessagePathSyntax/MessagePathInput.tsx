@@ -482,6 +482,7 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
       spacing={0.25}
     >
       <Autocomplete
+        autoHighlight
         items={orderedAutocompleteItems}
         disabled={props.disabled}
         readOnly={props.readOnly}

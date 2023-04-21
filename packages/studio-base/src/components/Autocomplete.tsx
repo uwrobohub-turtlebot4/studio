@@ -37,6 +37,7 @@ import { ReactWindowListboxAdapter } from "@foxglove/studio-base/components/Reac
 const MAX_FZF_MATCHES = 200;
 
 type AutocompleteProps<T> = {
+  autoHighlight?: boolean;
   autoSize?: boolean;
   disableAutoSelect?: boolean;
   disabled?: boolean;
@@ -184,6 +185,7 @@ export default React.forwardRef(function Autocomplete<T = unknown>(
 
   // Props
   const {
+    autoHighlight,
     selectedItem,
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     value = stateValue ?? (selectedItem ? getItemText(selectedItem) : undefined),
@@ -275,6 +277,7 @@ export default React.forwardRef(function Autocomplete<T = unknown>(
 
   return (
     <MuiAutocomplete
+      autoHighlight={autoHighlight}
       className={classes.root}
       clearIcon={<ClearIcon fontSize="small" />}
       componentsProps={{
@@ -318,11 +321,11 @@ export default React.forwardRef(function Autocomplete<T = unknown>(
             component="span"
             data-highlighted={selected}
             data-test-auto-item
-            className={cx(classes.item, {
-              [classes.itemHighlighted]: selected,
-              [classes.itemSelected]:
-                selectedItemValue != undefined && itemValue === selectedItemValue,
-            })}
+            // className={cx(classes.item, {
+            //   [classes.itemHighlighted]: selected,
+            //   [classes.itemSelected]:
+            //     selectedItemValue != undefined && itemValue === selectedItemValue,
+            // })}
           >
             <HighlightChars str={getItemText(item.item)} indices={item.positions} />
           </MenuItem>
