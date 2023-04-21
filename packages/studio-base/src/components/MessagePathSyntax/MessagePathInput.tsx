@@ -334,8 +334,9 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
       return "globalVariables";
     }
 
-    return undefined;
-  }, [invalidGlobalVariablesVariable, structureTraversalResult, validTypes, rosPath, topic]);
+    const isExactTopic = rosPath.topicName === path;
+    return isExactTopic ? "topicName" : "messagePath";
+  }, [invalidGlobalVariablesVariable, structureTraversalResult, validTypes, rosPath, topic, path]);
 
   const { autocompleteItems, autocompleteFilterText, autocompleteRange } = useMemo(() => {
     if (disableAutocomplete) {
@@ -468,9 +469,11 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
   const usesUnsupportedMathModifier =
     (supportsMathModifiers == undefined || !supportsMathModifiers) && path.includes(".@");
 
-  const hasError =
-    usesUnsupportedMathModifier ||
-    (autocompleteType != undefined && !disableAutocomplete && path.length > 0);
+  const isValidPath =
+    topic &&
+    structureTraversalResult?.valid &&
+    validTerminatingStructureItem(structureTraversalResult.structureItem, validTypes);
+  const hasError = usesUnsupportedMathModifier || !isValidPath;
 
   return (
     <Stack
