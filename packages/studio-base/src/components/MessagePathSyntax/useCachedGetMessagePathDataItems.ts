@@ -35,9 +35,12 @@ import { messagePathStructures } from "./messagePathsForDatatype";
 import parseRosPath, { quoteTopicNameIfNeeded } from "./parseRosPath";
 
 export type MessagePathDataItem = {
-  value: unknown; // The actual value.
-  path: string; // The path to get to this value. Tries to use "nice ids" like `[:]{some_id==123}` wherever possible.
-  constantName?: string; // The name of the constant that the value matches up with, if any.
+  /** The value of the item */
+  value: unknown;
+  /** The path to the value */
+  path: string;
+  /** The name of the constant for the value (if any) */
+  constantName?: string;
 };
 
 // Given a set of message paths, this returns a function that you can call to resolve a single path
@@ -242,8 +245,8 @@ export function getMessagePathDataItems(
   }
 
   const queriedData: MessagePathDataItem[] = [];
-  // Traverse the message (via `value`) and the `messagePath` at the same time. Also keep track
-  // of a `path` string that we should show in the tooltip of the point.
+  // Traverse the message (via `value`) and the `messagePath` at the same time. Build a path
+  // string to the current value.
   function traverse(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any,
@@ -302,19 +305,11 @@ export function getMessagePathDataItems(
         if (arrayElement == undefined) {
           continue;
         }
-        // Ideally show something like `/topic.object[:]{some_id=123}` for the path, but fall
-        // back to `/topic.object[10]` if necessary. In any case, make sure that the user can
-        // actually identify where the value came from.
+
         let newPath;
         if (nextPathItem && nextPathItem.type === "filter") {
           // If we have a filter set after this, it will update the path appropriately.
           newPath = `${path}[:]`;
-        } else if (typeof arrayElement === "object") {
-          // Use `i` here instead of `index`, since it's only different when `i` is negative,
-          // and in that case it's probably more useful to show to the user how many elements
-          // from the end of the array this data is, since they clearly are thinking in that way
-          // (otherwise they wouldn't have chosen a negative slice).
-          newPath = `${path}[${i}]`;
         } else {
           // Use `i` here instead of `index`, since it's only different when `i` is negative,
           // and in that case it's probably more useful to show to the user how many elements
