@@ -31,7 +31,6 @@ import {
 
 import { MessagePathStructureItem, MessagePathStructureItemMessage, RosPath } from "./constants";
 import { filterMatches } from "./filterMatches";
-import { TypicalFilterNames } from "./isTypicalFilterName";
 import { messagePathStructures } from "./messagePathsForDatatype";
 import parseRosPath, { quoteTopicNameIfNeeded } from "./parseRosPath";
 
@@ -311,17 +310,11 @@ export function getMessagePathDataItems(
           // If we have a filter set after this, it will update the path appropriately.
           newPath = `${path}[:]`;
         } else if (typeof arrayElement === "object") {
-          // See if `arrayElement` has a property that we typically filter on. If so, show that.
-          const name = TypicalFilterNames.find((id) => id in arrayElement);
-          if (name != undefined) {
-            newPath = `${path}[:]{${name}==${arrayElement[name]}}`;
-          } else {
-            // Use `i` here instead of `index`, since it's only different when `i` is negative,
-            // and in that case it's probably more useful to show to the user how many elements
-            // from the end of the array this data is, since they clearly are thinking in that way
-            // (otherwise they wouldn't have chosen a negative slice).
-            newPath = `${path}[${i}]`;
-          }
+          // Use `i` here instead of `index`, since it's only different when `i` is negative,
+          // and in that case it's probably more useful to show to the user how many elements
+          // from the end of the array this data is, since they clearly are thinking in that way
+          // (otherwise they wouldn't have chosen a negative slice).
+          newPath = `${path}[${i}]`;
         } else {
           // Use `i` here instead of `index`, since it's only different when `i` is negative,
           // and in that case it's probably more useful to show to the user how many elements
