@@ -245,7 +245,6 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
         autocompleteType === "topicName" && !messageIsValidType && !isSimpleField;
       const value = keepGoingAfterTopicName ? rawValue + "." : rawValue;
 
-      // fixme - this is not called on "esc" even tho we have a new selection...
       onSelectProp?.(completeStart + value + completeEnd);
 
       // We want to continue typing if we're dealing with a topic name,
@@ -486,6 +485,8 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
     >
       <Autocomplete
         autoHighlight
+        clearOnBlur
+        clearOnEscape
         items={orderedAutocompleteItems}
         disabled={props.disabled}
         readOnly={props.readOnly}
@@ -495,9 +496,6 @@ export default React.memo<MessagePathInputBaseProps>(function MessagePathInput(
         onSelect={(value, autocomplete) =>
           onSelect(value, autocomplete, autocompleteType, autocompleteRange)
         }
-        onBlur={() => {
-          // fixme - indicate the item has been selected
-        }}
         hasError={hasError}
         placeholder={
           placeholder != undefined && placeholder !== "" ? placeholder : "/some/topic.msgs[0].field"

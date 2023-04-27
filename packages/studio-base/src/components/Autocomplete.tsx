@@ -39,6 +39,8 @@ const MAX_FZF_MATCHES = 200;
 type AutocompleteProps<T> = {
   autoHighlight?: boolean;
   autoSize?: boolean;
+  clearOnBlur?: boolean;
+  clearOnEscape?: boolean;
   disableAutoSelect?: boolean;
   disabled?: boolean;
   filterText?: string;
@@ -186,6 +188,8 @@ export default React.forwardRef(function Autocomplete<T = unknown>(
   // Props
   const {
     autoHighlight,
+    clearOnBlur,
+    clearOnEscape,
     selectedItem,
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     value = stateValue ?? (selectedItem ? getItemText(selectedItem) : undefined),
@@ -280,6 +284,8 @@ export default React.forwardRef(function Autocomplete<T = unknown>(
       autoHighlight={autoHighlight}
       className={classes.root}
       clearIcon={<ClearIcon fontSize="small" />}
+      clearOnBlur={clearOnBlur}
+      clearOnEscape={clearOnEscape}
       componentsProps={{
         clearIndicator: { size: "small" },
         paper: { elevation: 8 },
