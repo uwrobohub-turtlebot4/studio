@@ -196,3 +196,15 @@ export function getRotationNoScaling(out: quat, mat: ReadonlyMat4): quat {
   }
   return out;
 }
+
+export function copyPose(out: Pose, pose: Readonly<Pose>): void {
+  const p = pose.position;
+  const o = pose.orientation;
+  out.position.x = p.x;
+  out.position.y = p.y;
+  out.position.z = p.z;
+  out.orientation.x = o.x;
+  out.orientation.y = o.y;
+  out.orientation.z = o.z;
+  out.orientation.w = o.w;
+}

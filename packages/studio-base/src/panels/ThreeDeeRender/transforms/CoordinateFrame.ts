@@ -9,7 +9,7 @@ import { mat4, quat, vec3, vec4 } from "gl-matrix";
 import { ArrayMap } from "@foxglove/den/collection";
 
 import { Transform } from "./Transform";
-import { Pose, mat4Identity } from "./geometry";
+import { Pose, copyPose, mat4Identity } from "./geometry";
 import { Duration, interpolate, percentOf, Time } from "./time";
 
 type TimeAndTransform = [time: Time, transform: Transform];
@@ -543,18 +543,6 @@ export class CoordinateFrame<ID extends AnyFrameId = UserFrameId> {
       ? `"${frameId}"`
       : frameId;
   }
-}
-
-function copyPose(out: Pose, pose: Readonly<Pose>): void {
-  const p = pose.position;
-  const o = pose.orientation;
-  out.position.x = p.x;
-  out.position.y = p.y;
-  out.position.z = p.z;
-  out.orientation.x = o.x;
-  out.orientation.y = o.y;
-  out.orientation.z = o.z;
-  out.orientation.w = o.w;
 }
 
 // Compute XYZ Euler angles in degrees from an unscaled rotation matrix. This

@@ -4,7 +4,7 @@
 
 import * as THREE from "three";
 
-import { TransformTree, makePose, Pose, AnyFrameId } from "./transforms";
+import { TransformTree, makePose, Pose, AnyFrameId, copyPose } from "./transforms";
 
 const tempPose = makePose();
 
@@ -21,9 +21,24 @@ export function updatePose(
   if (!pose) {
     throw new Error(`Missing userData.pose for ${renderable.name}`);
   }
-  const poseApplied = Boolean(
-    transformTree.apply(tempPose, pose, renderFrameId, fixedFrameId, srcFrameId, dstTime, srcTime),
-  );
+  let poseApplied = false;
+  // no transform through root needed if renderFrameId is the same as srcFrameId
+  if (srcFrameId === renderFrameId) {
+    copyPose(tempPose, pose);
+    poseApplied = true;
+  } else {
+    poseApplied = Boolean(
+      transformTree.apply(
+        tempPose,
+        pose,
+        renderFrameId,
+        fixedFrameId,
+        srcFrameId,
+        dstTime,
+        srcTime,
+      ),
+    );
+  }
   renderable.visible = poseApplied;
   if (poseApplied) {
     const p = tempPose.position;
