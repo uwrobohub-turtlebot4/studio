@@ -403,7 +403,7 @@ export class RenderObjectHistory<ParentRenderable extends Renderable<RenderObjec
     // Update the pose on each entry
     let hadTfError = false;
     for (const entry of this.history) {
-      const srcTime = entry.messageTime;
+      const srcTime = this.latest() === entry ? currentTime : entry.messageTime;
       const frameId = this.#renderable.userData.frameId;
       const updated = updatePose(
         entry.object3d,

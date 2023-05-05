@@ -23,7 +23,7 @@ export function updatePose(
   }
   let poseApplied = false;
   // no transform through root needed if renderFrameId is the same as srcFrameId
-  if (srcFrameId === renderFrameId) {
+  if (srcFrameId === renderFrameId && srcTime === dstTime) {
     copyPose(tempPose, pose);
     poseApplied = true;
   } else {
