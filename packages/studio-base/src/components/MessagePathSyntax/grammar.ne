@@ -44,8 +44,9 @@ value -> integer  {% (d) => d[0] %}
 topicName -> slashID:+     {% (d) => ({ value: d[0].join(""), repr: d[0].join("") }) %}
            | id slashID:*  {% (d) => ({ value: d[0] + d[1].join(""), repr: d[0] + d[1].join("") }) %}
            | quotedString  {% id %}
-slashID -> "/" id:?
-  {% (d) => d.join("") %}
+
+slashID -> "/" id:?     {% (d) => d.join("") %}
+         | "/" "$" id:? {% (d) => d.join("") %}
 
 quotedString ->
   "\""

@@ -35,6 +35,7 @@ import PanelToolbar, {
 import ToolbarIconButton from "@foxglove/studio-base/components/PanelToolbar/ToolbarIconButton";
 import Stack from "@foxglove/studio-base/components/Stack";
 import { ChartDefaultView } from "@foxglove/studio-base/components/TimeBasedChart";
+import { useMappedTopics } from "@foxglove/studio-base/panels/Plot/useMappedTopics";
 import { usePlotPanelMessageData } from "@foxglove/studio-base/panels/Plot/usePlotPanelMessageData";
 import { OnClickArg as OnChartClickArgs } from "@foxglove/studio-base/src/components/Chart";
 import { OpenSiblingPanel, PanelConfig, SaveConfig } from "@foxglove/studio-base/types/panels";
@@ -183,18 +184,27 @@ function Plot(props: Props) {
     showSingleCurrentMessage,
   });
 
+  const topicMappings = useMappedTopics(allPaths);
+
+  const mappedYPaths = useMemo(() => {
+    return yAxisPaths.map((path) => ({
+      ...path,
+      value: topicMappings.resolvedPaths[path.value] ?? path.value,
+    }));
+  }, [topicMappings, yAxisPaths]);
+
   // Keep disabled paths when passing into getDatasets, because we still want
   // easy access to the history when turning the disabled paths back on.
   const { datasets, pathsWithMismatchedDataLengths } = useMemo(() => {
     return getDatasets({
-      paths: yAxisPaths,
+      paths: mappedYPaths,
       itemsByPath: combinedPlotData,
       startTime: startTime ?? ZERO_TIME,
       xAxisVal,
       xAxisPath,
       invertedTheme: theme.palette.mode === "dark",
     });
-  }, [yAxisPaths, combinedPlotData, startTime, xAxisVal, xAxisPath, theme.palette.mode]);
+  }, [mappedYPaths, combinedPlotData, startTime, xAxisVal, xAxisPath, theme.palette.mode]);
 
   const messagePipeline = useMessagePipelineGetter();
   const onClick = useCallback<NonNullable<ComponentProps<typeof PlotChart>["onClick"]>>(

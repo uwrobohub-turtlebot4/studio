@@ -146,6 +146,15 @@ describe("parseRosPath", () => {
     expect(parseRosPath(String.raw`/foo."x.baz`)).toBeUndefined();
   });
 
+  it("parses global variables in topics", () => {
+    expect(parseRosPath("/$first_var/$second_var.foo")).toEqual({
+      topicName: "/$first_var/$second_var",
+      topicNameRepr: "/$first_var/$second_var",
+      messagePath: [{ type: "name", name: "foo", repr: "foo" }],
+      modifier: MISSING,
+    });
+  });
+
   it("parses slices", () => {
     expect(parseRosPath("/topic.foo[0].bar")).toEqual({
       topicName: "/topic",

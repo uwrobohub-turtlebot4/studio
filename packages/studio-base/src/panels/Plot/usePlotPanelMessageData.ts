@@ -3,14 +3,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Immutable } from "immer";
-import { groupBy, isEmpty, pick } from "lodash";
+import { isEmpty, pick } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { isLessThan, isTimeInRangeInclusive, subtract } from "@foxglove/rostime";
 import { useBlocksByTopic, useMessageReducer } from "@foxglove/studio-base/PanelAPI";
-import parseRosPath, {
-  getTopicsFromPaths,
-} from "@foxglove/studio-base/components/MessagePathSyntax/parseRosPath";
 import {
   useCachedGetMessagePathDataItems,
   useDecodeMessagePathsForMessagesByTopic,
@@ -18,6 +15,7 @@ import {
 import { ChartDefaultView } from "@foxglove/studio-base/components/TimeBasedChart";
 import { PlotDataByPath } from "@foxglove/studio-base/panels/Plot/internalTypes";
 import * as PlotData from "@foxglove/studio-base/panels/Plot/plotData";
+import { useMappedTopics } from "@foxglove/studio-base/panels/Plot/useMappedTopics";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 import { getTimestampForMessage } from "@foxglove/studio-base/util/time";
 
@@ -36,18 +34,13 @@ type Params = Immutable<{
 export function usePlotPanelMessageData(params: Params): Immutable<PlotDataByPath> {
   const { allPaths, followingView, showSingleCurrentMessage } = params;
 
-  // When iterating message events, we need a reverse lookup from topic to the
-  // paths that requested the topic.
-  const topicToPaths = useMemo(
-    () => groupBy(allPaths, (path) => parseRosPath(path)?.topicName),
-    [allPaths],
+  const topicMappings = useMappedTopics(allPaths);
+
+  const blocks = useBlocksByTopic(topicMappings.topics);
+
+  const decodeMessagePathsForMessagesByTopic = useDecodeMessagePathsForMessagesByTopic(
+    Object.values(topicMappings.resolvedPaths),
   );
-
-  const subscribeTopics = useMemo(() => getTopicsFromPaths(allPaths), [allPaths]);
-
-  const blocks = useBlocksByTopic(subscribeTopics);
-
-  const decodeMessagePathsForMessagesByTopic = useDecodeMessagePathsForMessagesByTopic(allPaths);
 
   // This memoization isn't quite ideal: getDatasets is a bit expensive with
   // lots of preloaded data, and when we preload a new block we re-generate the
@@ -96,7 +89,7 @@ export function usePlotPanelMessageData(params: Params): Immutable<PlotDataByPat
       let newAccumulated: TaggedPlotDataByPath | undefined;
 
       for (const msgEvent of msgEvents) {
-        const paths = topicToPaths[msgEvent.topic];
+        const paths = topicMappings.topicsToPaths[msgEvent.topic];
         if (!paths) {
           continue;
         }
@@ -162,16 +155,16 @@ export function usePlotPanelMessageData(params: Params): Immutable<PlotDataByPat
       return newAccumulated ?? accumulated;
     },
     [
-      blocksTimeRange,
+      blocksTimeRange.byPath,
       cachedGetMessagePathDataItems,
       followingView,
       showSingleCurrentMessage,
-      topicToPaths,
+      topicMappings.topicsToPaths,
     ],
   );
 
   const plotDataByPath = useMessageReducer<TaggedPlotDataByPath>({
-    topics: subscribeTopics,
+    topics: topicMappings.topics,
     preloadType: "full",
     restore,
     addMessages,
