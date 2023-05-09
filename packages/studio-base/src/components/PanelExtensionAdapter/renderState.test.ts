@@ -820,6 +820,9 @@ describe("renderState", () => {
       ],
     });
 
+    // snapshot first state current frame
+    const state1CurrentFrame = state1?.currentFrame;
+
     const state2 = buildRenderState({
       ...initialState,
       subscriptions: [
@@ -828,7 +831,7 @@ describe("renderState", () => {
       ],
     });
 
-    expect(state2?.currentFrame).not.toBe(state1?.currentFrame);
+    expect(state2?.currentFrame).not.toEqual(state1CurrentFrame);
 
     expect(state2).toEqual({
       topics: [
@@ -919,6 +922,12 @@ describe("renderState", () => {
   it("should correctly avoid rendering when current frame stops changing", () => {
     const buildRenderState = initRenderStateBuilder();
 
+    const stableConversionInputs = {
+      sortedTopics: [],
+      subscriptions: [{ topic: "test" }],
+      messageConverters: [],
+    };
+
     // The first render with a current frame produces a state with the current frame
     {
       const state = buildRenderState({
@@ -938,9 +947,7 @@ describe("renderState", () => {
         globalVariables: {},
         hoverValue: undefined,
         sharedPanelState: {},
-        sortedTopics: [],
-        subscriptions: [{ topic: "test" }],
-        messageConverters: [],
+        ...stableConversionInputs,
       });
 
       expect(state).toEqual({
@@ -967,9 +974,7 @@ describe("renderState", () => {
         globalVariables: {},
         hoverValue: undefined,
         sharedPanelState: {},
-        sortedTopics: [],
-        subscriptions: [{ topic: "test" }],
-        messageConverters: [],
+        ...stableConversionInputs,
       });
 
       expect(state).toEqual({
@@ -988,9 +993,7 @@ describe("renderState", () => {
         globalVariables: {},
         hoverValue: undefined,
         sharedPanelState: {},
-        sortedTopics: [],
-        subscriptions: [{ topic: "test" }],
-        messageConverters: [],
+        ...stableConversionInputs,
       });
 
       expect(state).toEqual(undefined);

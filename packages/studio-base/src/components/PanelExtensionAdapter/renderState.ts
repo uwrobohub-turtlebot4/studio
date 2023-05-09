@@ -2,6 +2,8 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import memoizeWeak from "memoize-weak";
+
 import { filterMap } from "@foxglove/den/collection";
 import { compare, toSec } from "@foxglove/rostime";
 import {
@@ -49,6 +51,95 @@ function converterKey(topic: string, schema: string): ConverterKey {
   return (topic + "\n" + schema) as ConverterKey;
 }
 
+type TopicSchemaConversions = {
+  // Topics which we are subscribed without a conversion, these are topics we
+  // want to receive the original message.
+  unconvertedSubscriptionTopics: Set<string>;
+
+  // When a subscription with a convertTo exists, we use this map to lookup a
+  // converter which can produce the desired output message schema. The keys for
+  // the map are `topic + input schema`.
+  //
+  // This allows the runtime message event handler logic which builds
+  // currentFrame and allFrames to lookup whether the incoming message event has
+  // converters to run by looking up the topic + schema of the message event in
+  // this map.
+  topicSchemaConverters: Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>;
+};
+
+/**
+ * Builds a set of topics we can render without conversion and a map of
+ * converterKey -> converter arguments we use to produce converted messages.
+ *
+ * This will be memoized for performance so the inputs should be stable.
+ */
+function collateTopicSchemaConversions(
+  subscriptions: readonly Subscription[],
+  sortedTopics: readonly PlayerTopic[],
+  messageConverters: undefined | readonly RegisterMessageConverterArgs<unknown>[],
+): TopicSchemaConversions {
+  const topicSchemaConverters = new Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>();
+  const unconvertedSubscriptionTopics: Set<string> = new Set();
+
+  // Bin the subscriptions into two sets: those which want a conversion and those that do not.
+  //
+  // For the subscriptions that want a conversion, if the topic schemaName matches the requested
+  // convertTo, then we don't need to do a conversion.
+  for (const subscription of subscriptions) {
+    if (!subscription.convertTo) {
+      unconvertedSubscriptionTopics.add(subscription.topic);
+      continue;
+    }
+
+    // If the convertTo is the same as the original schema for the topic then we don't need to
+    // perform a conversion.
+    const noConversion = sortedTopics.find(
+      (topic) => topic.name === subscription.topic && topic.schemaName === subscription.convertTo,
+    );
+    if (noConversion) {
+      unconvertedSubscriptionTopics.add(noConversion.name);
+      continue;
+    }
+
+    // Since we don't have an existing topic with out destination schema we need to find
+    // a converter that will convert from the topic to the desired schema
+    const subscriberTopic = sortedTopics.find((topic) => topic.name === subscription.topic);
+    if (!subscriberTopic) {
+      continue;
+    }
+
+    const key = converterKey(subscription.topic, subscriberTopic.schemaName ?? "<no-schema>");
+    let existingConverters = topicSchemaConverters.get(key);
+
+    // We've already stored a converter for this topic to convertTo
+    const haveConverter = existingConverters?.find(
+      (conv) => conv.toSchemaName === subscription.convertTo,
+    );
+    if (haveConverter) {
+      continue;
+    }
+
+    // Find a converter that can go from the original topic schema to the target schema
+    // Note: We only support one converter per unique from/to pair so this _find_ only needs to
+    //       find one converter rather than multiple converters.
+    const converter = messageConverters?.find(
+      (conv) =>
+        conv.fromSchemaName === subscriberTopic.schemaName &&
+        conv.toSchemaName === subscription.convertTo,
+    );
+
+    if (converter) {
+      existingConverters ??= [];
+      existingConverters.push(converter);
+      topicSchemaConverters.set(key, existingConverters);
+    }
+  }
+
+  return { unconvertedSubscriptionTopics, topicSchemaConverters };
+}
+
+const memoCollateTopicSchemaConversions = memoizeWeak(collateTopicSchemaConversions);
+
 /**
  * initRenderStateBuilder creates a function that transforms render state input into a new
  * RenderState
@@ -68,20 +159,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
   let prevMessageConverters: BuilderRenderStateInput["messageConverters"] | undefined;
   let prevSharedPanelState: BuilderRenderStateInput["sharedPanelState"];
   let prevCurrentFrame: RenderState["currentFrame"];
-
-  // Topics which we are subscribed without a conversion, these are topics we want to receive the
-  // original message
-  const unconvertedSubscriptionTopics: Set<string> = new Set();
-
-  // When a subscription with a convertTo exists, we lookup a converter which can produce the
-  // desired output message schema and store it in this map. The keys for the map are `topic + input
-  // schema`.
-  //
-  // This allows the runtime message event handler logic which builds currentFrame and allFrames to
-  // lookup whether the incoming message event has converters to run by looking up the topic +
-  // schema of the message event in this map.
-  const topicSchemaConverters: Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]> =
-    new Map();
+  let prevCollatedTopicSchemaConversions: undefined | TopicSchemaConversions;
 
   const prevRenderState: RenderState = {};
 
@@ -117,71 +195,12 @@ function initRenderStateBuilder(): BuildRenderStateFn {
       prevBlocks = undefined;
     }
 
-    // If topics, message converters, or subscriptions change, recalculate the
-    if (
-      prevSubscriptions !== subscriptions ||
-      prevSortedTopics !== sortedTopics ||
-      prevMessageConverters !== messageConverters
-    ) {
-      // reset which topics have subscriptions and which need converting
-      unconvertedSubscriptionTopics.clear();
-      topicSchemaConverters.clear();
-
-      // Bin the subscriptions into two sets: those which want a conversion and those that do not.
-      //
-      // For the subscriptions that want a conversion, if the topic schemaName matches the requested
-      // convertTo, then we don't need to do a conversion.
-      for (const subscription of subscriptions) {
-        if (!subscription.convertTo) {
-          unconvertedSubscriptionTopics.add(subscription.topic);
-          continue;
-        }
-
-        // If the convertTo is the same as the original schema for the topic then we don't need to
-        // perform a conversion.
-        const noConversion = sortedTopics.find(
-          (topic) =>
-            topic.name === subscription.topic && topic.schemaName === subscription.convertTo,
-        );
-        if (noConversion) {
-          unconvertedSubscriptionTopics.add(noConversion.name);
-          continue;
-        }
-
-        // Since we don't have an existing topic with out destination schema we need to find
-        // a converter that will convert from the topic to the desired schema
-        const subscriberTopic = sortedTopics.find((topic) => topic.name === subscription.topic);
-        if (!subscriberTopic) {
-          continue;
-        }
-
-        const key = converterKey(subscription.topic, subscriberTopic.schemaName ?? "<no-schema>");
-        let existingConverters = topicSchemaConverters.get(key);
-
-        // We've already stored a converter for this topic to convertTo
-        const haveConverter = existingConverters?.find(
-          (conv) => conv.toSchemaName === subscription.convertTo,
-        );
-        if (haveConverter) {
-          continue;
-        }
-
-        // Find a converter that can go from the original topic schema to the target schema
-        // Note: We only support one converter per unique from/to pair so this _find_ only needs to
-        //       find one converter rather than multiple converters.
-        const converter = messageConverters?.find(
-          (conv) =>
-            conv.fromSchemaName === subscriberTopic.schemaName &&
-            conv.toSchemaName === subscription.convertTo,
-        );
-
-        if (converter) {
-          existingConverters ??= [];
-          existingConverters.push(converter);
-          topicSchemaConverters.set(key, existingConverters);
-        }
-      }
-    }
+    const collatedTopicSchemaConversions = memoCollateTopicSchemaConversions(
+      subscriptions,
+      sortedTopics,
+      messageConverters,
+    );
+    const { unconvertedSubscriptionTopics, topicSchemaConverters } = collatedTopicSchemaConversions;
 
     if (watchedFields.has("didSeek")) {
       const didSeek = prevSeekTime !== activeData?.lastSeekTime;
@@ -254,7 +273,10 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     }
 
     if (watchedFields.has("currentFrame")) {
-      if (prevCurrentFrame !== currentFrame) {
+      if (
+        prevCurrentFrame !== currentFrame ||
+        prevCollatedTopicSchemaConversions !== collatedTopicSchemaConversions
+      ) {
         prevCurrentFrame = currentFrame;
         shouldRender = true;
 
@@ -404,6 +426,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     // Several of the watch steps depend on the comparison against prev and new values
     prevSubscriptions = subscriptions;
     prevMessageConverters = messageConverters;
+    prevCollatedTopicSchemaConversions = collatedTopicSchemaConversions;
 
     if (!shouldRender) {
       return undefined;
