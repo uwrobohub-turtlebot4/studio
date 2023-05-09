@@ -6,6 +6,7 @@
     "baseUrl": "./src",
     "jsx": "react-jsx",
     "lib": ["dom", "dom.iterable", "es2020", "webworker"],
+    "types": [ "dom-webcodecs" ],
     "declarationMap": false,
     "sourceMap": false,
     "paths": {

@@ -161,6 +161,13 @@ export const getBuiltin: (t: TFunction<"panels">) => PanelInfo[] = (t) => [
     module: async () => await import("./VariableSlider"),
   },
   {
+    title: t("h264"),
+    type: "H264Playback",
+    description: t("h264Description"),
+    thumbnail: variableSliderThumbnail,
+    module: async () => await import("./h264/src"),
+  },
+  {
     title: t("userScripts"),
     type: "NodePlayground",
     description: t("userScriptsDescription"),

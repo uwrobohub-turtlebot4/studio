@@ -50,4 +50,6 @@ export const panels: TypeOptions["resources"]["panels"] = {
   userScriptsDescription: "使用 TypeScript 编写自定义数据转换。以前称为 Node Playground。",
   variableSlider: "变量滑块",
   variableSliderDescription: "更新布局的数字变量值。",
+  h264: "H264 Playback",
+  h264Description: "Play video stream",
 };

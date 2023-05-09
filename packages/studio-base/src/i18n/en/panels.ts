@@ -51,4 +51,6 @@ export const panels = {
     "Write custom data transformations in TypeScript. Previously known as Node Playground.",
   variableSlider: "Variable Slider",
   variableSliderDescription: "Update numerical variable values for a layout.",
+  h264: "H264 Playback",
+  h264Description: "Play video stream",
 };

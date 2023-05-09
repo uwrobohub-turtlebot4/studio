@@ -135,6 +135,19 @@ export function makeConfig(
         },
         { test: /\.(md|template)$/, type: "asset/source" },
         {
+          test: /\.worker\.ts$/,
+          use: [
+            {
+              loader: "worker-loader",
+              // Force to inline the worker as a blob.
+              options: { inline: "no-fallback" },
+            },
+            {
+              loader: "ts-loader",
+            },
+          ],
+        },
+        {
           test: /\.svg$/,
           loader: "@svgr/webpack", // foxglove-depcheck-used: @svgr/webpack
           options: {

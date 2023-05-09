@@ -1,0 +1,3 @@
+[submodule "packages/studio-base/src/panels/h264"]
+	path = packages/studio-base/src/panels/h264
+	url = https://github.com/codewithpassion/foxglove-studio-h264-extension.git

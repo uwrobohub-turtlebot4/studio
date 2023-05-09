@@ -63,6 +63,7 @@
     "@testing-library/user-event": "14.4.3",
     "@types/base16": "^1.0.2",
     "@types/cytoscape": "^3.19.9",
+    "@types/dom-webcodecs": "^0.1.4",
     "@types/foxglove__roslibjs": "workspace:*",
     "@types/gl-matrix": "3.2.0",
     "@types/hammerjs": "2.0.41",
@@ -133,6 +134,7 @@
     "natsort": "2.0.3",
     "nearley": "2.20.1",
     "nearley-loader": "2.0.0",
+    "node-video-lib": "patch:node-video-lib@npm:2.2.1#./src/panels/h264/patches/node-video-lib-async.patch",
     "notistack": "2.0.8",
     "path-browserify": "1.0.1",
     "prettier": "2.8.3",
@@ -177,6 +179,7 @@
     "use-pan-and-zoom": "0.6.5",
     "uuid": "9.0.0",
     "webpack": "5.76.2",
+    "worker-loader": "^3.0.8",
     "zustand": "4.3.7"
   }
 }
