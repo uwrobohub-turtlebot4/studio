@@ -4,6 +4,7 @@
 
 import { difference } from "lodash";
 import memoizeWeak from "memoize-weak";
+import { DeepReadonly } from "ts-essentials";
 
 import { filterMap } from "@foxglove/den/collection";
 import { compare, toSec } from "@foxglove/rostime";
@@ -42,7 +43,8 @@ type BuilderRenderStateInput = {
 type BuildRenderStateFn = (input: BuilderRenderStateInput) => Readonly<RenderState> | undefined;
 
 // Branded string to ensure that users go through the `converterKey` function to compute a lookup key
-type ConverterKey = string & { __brand: "ConverterKey" };
+type Brand<K, T> = K & { __brand: T };
+type ConverterKey = Brand<string, "ConverterKey">;
 
 // Create a string lookup key from a message event
 //
@@ -52,21 +54,47 @@ function converterKey(topic: string, schema: string): ConverterKey {
   return (topic + "\n" + schema) as ConverterKey;
 }
 
+/**
+ * Convert message into convertedMessages using the keyed converters. Modifies
+ * convertedMessages in place for efficiency.
+ */
+function convertMessage(
+  messageEvent: DeepReadonly<MessageEvent<unknown>>,
+  converters: DeepReadonly<Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>>,
+  convertedMessages: MessageEvent<unknown>[],
+) {
+  const key = converterKey(messageEvent.topic, messageEvent.schemaName);
+  const matchedConverters = converters.get(key);
+  for (const converter of matchedConverters ?? []) {
+    const convertedMessage = converter.converter(messageEvent.message);
+    convertedMessages.push({
+      topic: messageEvent.topic,
+      schemaName: converter.toSchemaName,
+      receiveTime: messageEvent.receiveTime,
+      message: convertedMessage,
+      originalMessageEvent: messageEvent,
+      sizeInBytes: messageEvent.sizeInBytes,
+    });
+  }
+}
+
 type TopicSchemaConverterMap = Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>;
 
 /**
- * Returns the converters present in newConverters that are not present in old converters.
- * Used for back-processing frames as converters change.
+ * Returns a new map consisting of all items in b not present in a.
  */
-const newConvertersForKey = memoizeWeak(
-  (
-    key: ConverterKey,
-    oldConverters: undefined | TopicSchemaConverterMap,
-    newConverters: TopicSchemaConverterMap,
-  ): RegisterMessageConverterArgs<unknown>[] => {
-    return difference(newConverters.get(key), oldConverters?.get(key) ?? []);
-  },
-);
+function mapDifference<K, V>(a: undefined | Map<K, V[]>, b: Map<K, V[]>): Map<K, V[]> {
+  const result = new Map<K, V[]>();
+  for (const [key, value] of b.entries()) {
+    const newValues = difference(value, a?.get(key) ?? []);
+    if (newValues.length > 0) {
+      result.set(key, newValues);
+    }
+  }
+  return result;
+}
+
+const memoMapDifference = memoizeWeak(mapDifference);
 
 type TopicSchemaConversions = {
   // Topics which we are subscribed without a conversion, these are topics we
@@ -176,7 +204,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
   let prevMessageConverters: BuilderRenderStateInput["messageConverters"] | undefined;
   let prevSharedPanelState: BuilderRenderStateInput["sharedPanelState"];
   let prevCurrentFrame: RenderState["currentFrame"];
-  let prevCollatedTopicSchemaConversions: undefined | TopicSchemaConversions;
+  let prevCollatedConversions: undefined | TopicSchemaConversions;
 
   const prevRenderState: RenderState = {};
 
@@ -212,12 +240,17 @@ function initRenderStateBuilder(): BuildRenderStateFn {
       prevBlocks = undefined;
     }
 
-    const collatedTopicSchemaConversions = memoCollateTopicSchemaConversions(
+    const collatedConversions = memoCollateTopicSchemaConversions(
       subscriptions,
       sortedTopics,
       messageConverters,
     );
-    const { unconvertedSubscriptionTopics, topicSchemaConverters } = collatedTopicSchemaConversions;
+    const { unconvertedSubscriptionTopics, topicSchemaConverters } = collatedConversions;
+
+    const newConverters = memoMapDifference(
+      prevCollatedConversions?.topicSchemaConverters,
+      topicSchemaConverters,
+    );
 
     if (watchedFields.has("didSeek")) {
       const didSeek = prevSeekTime !== activeData?.lastSeekTime;
@@ -290,60 +323,38 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     }
 
     if (watchedFields.has("currentFrame")) {
-      if (
-        prevCurrentFrame !== currentFrame ||
-        prevCollatedTopicSchemaConversions !== collatedTopicSchemaConversions
-      ) {
-        const frameToProcess = currentFrame ?? prevCurrentFrame;
-        prevCurrentFrame = currentFrame;
-        shouldRender = true;
-
-        if (frameToProcess) {
-          const postProcessedFrame: MessageEvent<unknown>[] = [];
-
-          for (const messageEvent of frameToProcess) {
-            // Only process unconverted messages on current frame.
-            if (currentFrame && unconvertedSubscriptionTopics.has(messageEvent.topic)) {
-              postProcessedFrame.push(messageEvent);
-            }
-
-            const key = converterKey(messageEvent.topic, messageEvent.schemaName);
-
-            // Get the converters that need to be run for this message event. If
-            // we have new messages we run all converters. If we're processing a
-            // previous frame then skip any converters we ran on the previous
-            // frame to avoid emitting duplicate messages.
-            const converters = currentFrame
-              ? topicSchemaConverters.get(key)
-              : newConvertersForKey(
-                  key,
-                  prevCollatedTopicSchemaConversions?.topicSchemaConverters,
-                  topicSchemaConverters,
-                );
-            if (converters) {
-              for (const converter of converters) {
-                const convertedMessage = converter.converter(messageEvent.message);
-                postProcessedFrame.push({
-                  topic: messageEvent.topic,
-                  schemaName: converter.toSchemaName,
-                  receiveTime: messageEvent.receiveTime,
-                  message: convertedMessage,
-                  originalMessageEvent: messageEvent,
-                  sizeInBytes: messageEvent.sizeInBytes,
-                });
-              }
-            }
+      if (currentFrame) {
+        // If we have a new frame, emit that frame and process all messages on
+        // that frame.
+        const postProcessedFrame: MessageEvent<unknown>[] = [];
+        // Only process unconverted messages on currentFrame.
+        for (const messageEvent of currentFrame) {
+          if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
+            postProcessedFrame.push(messageEvent);
           }
-
-          if (currentFrame || postProcessedFrame.length > 0) {
-            renderState.currentFrame = postProcessedFrame;
-          } else {
-            renderState.currentFrame = undefined;
-          }
-        } else {
-          renderState.currentFrame = undefined;
+          convertMessage(messageEvent, topicSchemaConverters, postProcessedFrame);
         }
+        renderState.currentFrame = postProcessedFrame;
+        shouldRender = true;
+      } else if (prevCollatedConversions !== collatedConversions) {
+        // If we don't have a new frame but our conversions have changed, run
+        // only the new conversions on the previous frame.
+        const postProcessedFrame: MessageEvent<unknown>[] = [];
+        for (const messageEvent of prevCurrentFrame ?? []) {
+          convertMessage(messageEvent, newConverters, postProcessedFrame);
+          if (postProcessedFrame.length > 0) {
+            renderState.currentFrame = postProcessedFrame;
+            shouldRender = true;
+          }
+        }
+      } else if (prevCurrentFrame !== currentFrame) {
+        // Otherwise if we're replacing a non-empty frame with an empty frame,
+        // include the empty frame in the new render state.
+        renderState.currentFrame = currentFrame;
+        shouldRender = true;
       }
+
+      prevCurrentFrame = currentFrame;
     }
 
     if (watchedFields.has("allFrames")) {
@@ -457,7 +468,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     // Several of the watch steps depend on the comparison against prev and new values
     prevSubscriptions = subscriptions;
     prevMessageConverters = messageConverters;
-    prevCollatedTopicSchemaConversions = collatedTopicSchemaConversions;
+    prevCollatedConversions = collatedConversions;
 
     if (!shouldRender) {
       return undefined;
