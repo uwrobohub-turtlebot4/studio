@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { difference } from "lodash";
 import memoizeWeak from "memoize-weak";
 
 import { filterMap } from "@foxglove/den/collection";
@@ -51,6 +52,22 @@ function converterKey(topic: string, schema: string): ConverterKey {
   return (topic + "\n" + schema) as ConverterKey;
 }
 
+type TopicSchemaConverterMap = Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>;
+
+/**
+ * Returns the converters present in newConverters that are not present in old converters.
+ * Used for back-processing frames as converters change.
+ */
+const newConvertersForKey = memoizeWeak(
+  (
+    key: ConverterKey,
+    oldConverters: undefined | TopicSchemaConverterMap,
+    newConverters: TopicSchemaConverterMap,
+  ): RegisterMessageConverterArgs<unknown>[] => {
+    return difference(newConverters.get(key), oldConverters?.get(key) ?? []);
+  },
+);
+
 type TopicSchemaConversions = {
   // Topics which we are subscribed without a conversion, these are topics we
   // want to receive the original message.
@@ -64,7 +81,7 @@ type TopicSchemaConversions = {
   // currentFrame and allFrames to lookup whether the incoming message event has
   // converters to run by looking up the topic + schema of the message event in
   // this map.
-  topicSchemaConverters: Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>;
+  topicSchemaConverters: TopicSchemaConverterMap;
 };
 
 /**
@@ -277,22 +294,32 @@ function initRenderStateBuilder(): BuildRenderStateFn {
         prevCurrentFrame !== currentFrame ||
         prevCollatedTopicSchemaConversions !== collatedTopicSchemaConversions
       ) {
+        const frameToProcess = currentFrame ?? prevCurrentFrame;
         prevCurrentFrame = currentFrame;
         shouldRender = true;
 
-        if (currentFrame) {
+        if (frameToProcess) {
           const postProcessedFrame: MessageEvent<unknown>[] = [];
 
-          for (const messageEvent of currentFrame) {
-            if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
+          for (const messageEvent of frameToProcess) {
+            // Only process unconverted messages on current frame.
+            if (currentFrame && unconvertedSubscriptionTopics.has(messageEvent.topic)) {
               postProcessedFrame.push(messageEvent);
             }
 
-            // Get the converters that need to be run for this message event
-            // See the comment for topicSchemaConverters on the use of the key
-            const converters = topicSchemaConverters.get(
-              converterKey(messageEvent.topic, messageEvent.schemaName),
-            );
+            const key = converterKey(messageEvent.topic, messageEvent.schemaName);
+
+            // Get the converters that need to be run for this message event. If
+            // we have new messages we run all converters. If we're processing a
+            // previous frame then skip any converters we ran on the previous
+            // frame to avoid emitting duplicate messages.
+            const converters = currentFrame
+              ? topicSchemaConverters.get(key)
+              : newConvertersForKey(
+                  key,
+                  prevCollatedTopicSchemaConversions?.topicSchemaConverters,
+                  topicSchemaConverters,
+                );
             if (converters) {
               for (const converter of converters) {
                 const convertedMessage = converter.converter(messageEvent.message);
@@ -308,7 +335,11 @@ function initRenderStateBuilder(): BuildRenderStateFn {
             }
           }
 
-          renderState.currentFrame = postProcessedFrame;
+          if (currentFrame || postProcessedFrame.length > 0) {
+            renderState.currentFrame = postProcessedFrame;
+          } else {
+            renderState.currentFrame = undefined;
+          }
         } else {
           renderState.currentFrame = undefined;
         }

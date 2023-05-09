@@ -825,6 +825,7 @@ describe("renderState", () => {
 
     const state2 = buildRenderState({
       ...initialState,
+      currentFrame: undefined,
       subscriptions: [
         ...initialState.subscriptions,
         { topic: "test", convertTo: "anotherSchema", preload: true },
@@ -843,27 +844,6 @@ describe("renderState", () => {
         },
       ],
       currentFrame: [
-        {
-          topic: "test",
-          schemaName: "schema",
-          message: { from: "currentFrame" },
-          receiveTime: { sec: 0, nsec: 0 },
-          sizeInBytes: 1,
-        },
-        {
-          topic: "test",
-          schemaName: "otherSchema",
-          message: 1,
-          receiveTime: { sec: 0, nsec: 0 },
-          sizeInBytes: 1,
-          originalMessageEvent: {
-            topic: "test",
-            schemaName: "schema",
-            message: { from: "currentFrame" },
-            receiveTime: { sec: 0, nsec: 0 },
-            sizeInBytes: 1,
-          },
-        },
         {
           topic: "test",
           schemaName: "anotherSchema",
