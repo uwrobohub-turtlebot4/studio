@@ -407,7 +407,7 @@ export type ExtensionPanelRegistration = {
 export type RegisterMessageConverterArgs<Src> = {
   fromSchemaName: string;
   toSchemaName: string;
-  converter: (msg: Src) => unknown;
+  converter: (msg: Src, options: { publishTime: undefined | Time }) => unknown;
 };
 
 export interface ExtensionContext {
