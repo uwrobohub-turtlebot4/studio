@@ -11,6 +11,12 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
+// This regex does not change so we can create it once and reuse.
+const typicalFilterNameRegex = /^id$|_id$|I[dD]$|^key$/;
+
+/**
+ * Returns true if the given name is a typical filter name.
+ */
 export function isTypicalFilterName(name: string): boolean {
-  return /^id$|_id$|I[dD]$/.test(name);
+  return typicalFilterNameRegex.test(name);
 }
