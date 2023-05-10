@@ -16,7 +16,7 @@ type ConverterKey = Brand<string, "ConverterKey">;
 //
 // The string key uses a newline delimeter to avoid producting the same key for topic/schema name
 // values that might concatenate to the same string. i.e. "topic" "schema" and "topics" "chema".
-export function converterKey(topic: string, schema: string): ConverterKey {
+function converterKey(topic: string, schema: string): ConverterKey {
   return (topic + "\n" + schema) as ConverterKey;
 }
 
@@ -45,12 +45,12 @@ export function convertMessage(
 }
 
 /**
- * Returns a new map consisting of all items in b not present in a.
+ * Returns a new map consisting of all items in a not present in b.
  */
-export function mapDifference<K, V>(a: undefined | Map<K, V[]>, b: Map<K, V[]>): Map<K, V[]> {
+export function mapDifference<K, V>(a: Map<K, V[]>, b: undefined | Map<K, V[]>): Map<K, V[]> {
   const result = new Map<K, V[]>();
-  for (const [key, value] of b.entries()) {
-    const newValues = difference(value, a?.get(key) ?? []);
+  for (const [key, value] of a.entries()) {
+    const newValues = difference(value, b?.get(key) ?? []);
     if (newValues.length > 0) {
       result.set(key, newValues);
     }
@@ -145,4 +145,53 @@ export function collateTopicSchemaConversions(
   }
 
   return { unconvertedSubscriptionTopics, topicSchemaConverters };
+}
+
+/**
+ * Function to iterate and call function over multiple sorted arrays in sorted order across all items in all arrays.
+ * Time complexity is O(t*n) where t is the number of arrays and n is the total number of items in all arrays.
+ * Space complexity is O(t) where t is the number of arrays.
+ * @param arrays - sorted arrays to iterate over
+ * @param compareFn - function called to compare items in arrays. Returns a positive value if left is larger than right,
+ *  a negative value if right is larger than left, or zero if both are equal
+ * @param forEach - callback to be executed on all items in the arrays to iterate over in sorted order across all arrays
+ */
+export function forEachSortedArrays<Item>(
+  arrays: Item[][],
+  compareFn: (a: Item, b: Item) => number,
+  forEach: (item: Item) => void,
+): void {
+  const cursors: number[] = Array(arrays.length).fill(0);
+  if (arrays.length === 0) {
+    return;
+  }
+  for (;;) {
+    let minCursorIndex = undefined;
+    for (let i = 0; i < cursors.length; i++) {
+      const cursor = cursors[i]!;
+      const array = arrays[i]!;
+      if (cursor >= array.length) {
+        continue;
+      }
+      const item = array[cursor]!;
+      if (minCursorIndex == undefined) {
+        minCursorIndex = i;
+      } else {
+        const minItem = arrays[minCursorIndex]![cursors[minCursorIndex]!]!;
+        if (compareFn(item, minItem) < 0) {
+          minCursorIndex = i;
+        }
+      }
+    }
+    if (minCursorIndex == undefined) {
+      break;
+    }
+    const minItem = arrays[minCursorIndex]![cursors[minCursorIndex]!];
+    if (minItem != undefined) {
+      forEach(minItem);
+      cursors[minCursorIndex]++;
+    } else {
+      break;
+    }
+  }
 }

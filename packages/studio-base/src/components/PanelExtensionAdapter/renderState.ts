@@ -19,20 +19,24 @@ import {
   EMPTY_GLOBAL_VARIABLES,
   GlobalVariables,
 } from "@foxglove/studio-base/hooks/useGlobalVariables";
-import { PlayerState, Topic as PlayerTopic } from "@foxglove/studio-base/players/types";
+import {
+  MessageBlock,
+  PlayerState,
+  Topic as PlayerTopic,
+} from "@foxglove/studio-base/players/types";
 import { HoverValue } from "@foxglove/studio-base/types/hoverValue";
 
 import {
   collateTopicSchemaConversions,
-  converterKey,
   convertMessage,
+  forEachSortedArrays,
   mapDifference,
   TopicSchemaConversions,
 } from "./messageProcessing";
 
 const EmptyParameters = new Map<string, ParameterValue>();
 
-type BuilderRenderStateInput = {
+export type BuilderRenderStateInput = {
   appSettings: Map<string, AppSettingValue> | undefined;
   colorScheme: RenderState["colorScheme"] | undefined;
   currentFrame: MessageEvent<unknown>[] | undefined;
@@ -64,9 +68,8 @@ const memoCollateTopicSchemaConversions = memoizeWeak(collateTopicSchemaConversi
  */
 function initRenderStateBuilder(): BuildRenderStateFn {
   let prevVariables: GlobalVariables = EMPTY_GLOBAL_VARIABLES;
-  let prevBlocks: unknown;
+  let prevBlocks: undefined | readonly (undefined | MessageBlock)[];
   let prevSeekTime: number | undefined;
-  let prevSubscriptions: BuilderRenderStateInput["subscriptions"];
   let prevSortedTopics: BuilderRenderStateInput["sortedTopics"] | undefined;
   let prevMessageConverters: BuilderRenderStateInput["messageConverters"] | undefined;
   let prevSharedPanelState: BuilderRenderStateInput["sharedPanelState"];
@@ -99,20 +102,17 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     // The render state starts with the previous render state and changes are applied as detected
     const renderState: RenderState = prevRenderState;
 
-    // If the player has loaded all the blocks, the blocks reference won't change so our message
-    // pipeline handler for allFrames won't create a new set of all frames for the newly
-    // subscribed topic. To ensure a new set of allFrames with the newly subscribed topic is
-    // created, we unset the blocks ref which will force re-creating allFrames.
-    if (subscriptions !== prevSubscriptions) {
-      prevBlocks = undefined;
-    }
-
     const collatedConversions = memoCollateTopicSchemaConversions(
       subscriptions,
       sortedTopics,
       messageConverters,
     );
     const { unconvertedSubscriptionTopics, topicSchemaConverters } = collatedConversions;
+    const conversionsChanged = prevCollatedConversions !== collatedConversions;
+    const newConverters = memoMapDifference(
+      topicSchemaConverters,
+      prevCollatedConversions?.topicSchemaConverters,
+    );
 
     if (watchedFields.has("didSeek")) {
       const didSeek = prevSeekTime !== activeData?.lastSeekTime;
@@ -187,9 +187,8 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     if (watchedFields.has("currentFrame")) {
       if (currentFrame) {
         // If we have a new frame, emit that frame and process all messages on
-        // that frame.
+        // that frame. Only process unconverted messages on currentFrame.
         const postProcessedFrame: MessageEvent<unknown>[] = [];
-        // Only process unconverted messages on currentFrame.
         for (const messageEvent of currentFrame) {
           if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
             postProcessedFrame.push(messageEvent);
@@ -198,21 +197,15 @@ function initRenderStateBuilder(): BuildRenderStateFn {
         }
         renderState.currentFrame = postProcessedFrame;
         shouldRender = true;
-      } else if (prevCollatedConversions !== collatedConversions) {
+      } else if (conversionsChanged) {
         // If we don't have a new frame but our conversions have changed, run
         // only the new conversions on the previous frame.
         const postProcessedFrame: MessageEvent<unknown>[] = [];
-        const newConverters = memoMapDifference(
-          prevCollatedConversions?.topicSchemaConverters,
-          topicSchemaConverters,
-        );
         for (const messageEvent of prevCurrentFrame ?? []) {
           convertMessage(messageEvent, newConverters, postProcessedFrame);
-          if (postProcessedFrame.length > 0) {
-            renderState.currentFrame = postProcessedFrame;
-            shouldRender = true;
-          }
         }
+        renderState.currentFrame = postProcessedFrame;
+        shouldRender = true;
       } else if (prevCurrentFrame !== currentFrame) {
         // Otherwise if we're replacing a non-empty frame with an empty frame,
         // include the empty frame in the new render state.
@@ -224,10 +217,11 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     }
 
     if (watchedFields.has("allFrames")) {
-      // see comment for prevBlocksRef on why extended message store updates are gated this way
+      // Rebuild allFrames if we have new blocks or if our conversions have changed.
       const newBlocks = playerState?.progress.messageCache?.blocks;
-      if (newBlocks && prevBlocks !== newBlocks) {
+      if ((newBlocks && prevBlocks !== newBlocks) || conversionsChanged) {
         shouldRender = true;
+        const blocksToProcess = newBlocks ?? prevBlocks ?? [];
         const frames: MessageEvent<unknown>[] = (renderState.allFrames = []);
         // only populate allFrames with topics that the panel wants to preload
         const topicsToPreloadForPanel = Array.from(
@@ -236,7 +230,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
           ),
         );
 
-        for (const block of newBlocks) {
+        for (const block of blocksToProcess) {
           if (!block) {
             continue;
           }
@@ -247,30 +241,19 @@ function initRenderStateBuilder(): BuildRenderStateFn {
             topicsToPreloadForPanel.map((topic) => block.messagesByTopic[topic] ?? []),
             (a, b) => compare(a.receiveTime, b.receiveTime),
             (messageEvent) => {
-              // Message blocks may contain topics that we are not subscribed to so we need to filter those out.
-              // We use the topicNoConversions and topicConversions to determine if we should include the message event
-
-              if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
+              // Message blocks may contain topics that we are not subscribed to so we
+              // need to filter those out. We use unconvertedSubscriptionTopics to
+              // determine if we should include the message event.
+              //
+              // Unconverted messages should only be included if we have new blocks.
+              if (newBlocks && unconvertedSubscriptionTopics.has(messageEvent.topic)) {
                 frames.push(messageEvent);
               }
 
-              // Get the converters available for this topic and schema
-              const converters = topicSchemaConverters.get(
-                converterKey(messageEvent.topic, messageEvent.schemaName),
-              );
-              if (converters) {
-                for (const converter of converters) {
-                  const convertedMessage = converter.converter(messageEvent.message);
-                  frames.push({
-                    topic: messageEvent.topic,
-                    schemaName: converter.toSchemaName,
-                    receiveTime: messageEvent.receiveTime,
-                    message: convertedMessage,
-                    originalMessageEvent: messageEvent,
-                    sizeInBytes: messageEvent.sizeInBytes,
-                  });
-                }
-              }
+              // Run all converters if we have new blocks and only new ones if we're
+              // reprocessing the previous block to handle new conversions.
+              const converters = newBlocks ? topicSchemaConverters : newConverters;
+              convertMessage(messageEvent, converters, frames);
             },
           );
         }
@@ -332,7 +315,6 @@ function initRenderStateBuilder(): BuildRenderStateFn {
 
     // Update the prev fields with the latest values at the end of all the watch steps
     // Several of the watch steps depend on the comparison against prev and new values
-    prevSubscriptions = subscriptions;
     prevMessageConverters = messageConverters;
     prevCollatedConversions = collatedConversions;
 
@@ -345,52 +327,3 @@ function initRenderStateBuilder(): BuildRenderStateFn {
 }
 
 export { initRenderStateBuilder };
-
-/**
- * Function to iterate and call function over multiple sorted arrays in sorted order across all items in all arrays.
- * Time complexity is O(t*n) where t is the number of arrays and n is the total number of items in all arrays.
- * Space complexity is O(t) where t is the number of arrays.
- * @param arrays - sorted arrays to iterate over
- * @param compareFn - function called to compare items in arrays. Returns a positive value if left is larger than right,
- *  a negative value if right is larger than left, or zero if both are equal
- * @param forEach - callback to be executed on all items in the arrays to iterate over in sorted order across all arrays
- */
-export function forEachSortedArrays<Item>(
-  arrays: Item[][],
-  compareFn: (a: Item, b: Item) => number,
-  forEach: (item: Item) => void,
-): void {
-  const cursors: number[] = Array(arrays.length).fill(0);
-  if (arrays.length === 0) {
-    return;
-  }
-  for (;;) {
-    let minCursorIndex = undefined;
-    for (let i = 0; i < cursors.length; i++) {
-      const cursor = cursors[i]!;
-      const array = arrays[i]!;
-      if (cursor >= array.length) {
-        continue;
-      }
-      const item = array[cursor]!;
-      if (minCursorIndex == undefined) {
-        minCursorIndex = i;
-      } else {
-        const minItem = arrays[minCursorIndex]![cursors[minCursorIndex]!]!;
-        if (compareFn(item, minItem) < 0) {
-          minCursorIndex = i;
-        }
-      }
-    }
-    if (minCursorIndex == undefined) {
-      break;
-    }
-    const minItem = arrays[minCursorIndex]![cursors[minCursorIndex]!];
-    if (minItem != undefined) {
-      forEach(minItem);
-      cursors[minCursorIndex]++;
-    } else {
-      break;
-    }
-  }
-}

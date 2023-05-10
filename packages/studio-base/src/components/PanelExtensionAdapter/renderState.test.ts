@@ -2,9 +2,76 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { produce } from "immer";
+
 import { PlayerPresence } from "@foxglove/studio-base/players/types";
 
-import { forEachSortedArrays, initRenderStateBuilder } from "./renderState";
+import { BuilderRenderStateInput, initRenderStateBuilder } from "./renderState";
+
+function makeInitialState(): BuilderRenderStateInput {
+  return {
+    watchedFields: new Set(["topics", "currentFrame", "allFrames"]),
+    playerState: {
+      presence: PlayerPresence.INITIALIZING,
+      capabilities: [],
+      profile: undefined,
+      playerId: "test",
+      progress: {
+        messageCache: {
+          startTime: { sec: 0, nsec: 0 },
+          blocks: [
+            {
+              sizeInBytes: 0,
+              messagesByTopic: {
+                test: [
+                  {
+                    topic: "test",
+                    schemaName: "schema",
+                    receiveTime: { sec: 1, nsec: 0 },
+                    sizeInBytes: 1,
+                    message: { from: "allFrames" },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    },
+    appSettings: undefined,
+    currentFrame: [
+      {
+        topic: "test",
+        schemaName: "schema",
+        receiveTime: { sec: 0, nsec: 0 },
+        sizeInBytes: 1,
+        message: { from: "currentFrame" },
+      },
+    ],
+    colorScheme: undefined,
+    globalVariables: {},
+    hoverValue: undefined,
+    sharedPanelState: {},
+    sortedTopics: [{ name: "test", schemaName: "schema" }],
+    subscriptions: [{ topic: "test" }, { topic: "test", convertTo: "otherSchema", preload: true }],
+    messageConverters: [
+      {
+        fromSchemaName: "schema",
+        toSchemaName: "otherSchema",
+        converter: () => {
+          return 1;
+        },
+      },
+      {
+        fromSchemaName: "schema",
+        toSchemaName: "anotherSchema",
+        converter: () => {
+          return 2;
+        },
+      },
+    ],
+  };
+}
 
 describe("renderState", () => {
   it("should include convertibleTo when there are message converters", () => {
@@ -696,74 +763,10 @@ describe("renderState", () => {
 
   it("should deliver new message when a second converter from the same topic is enabled", () => {
     const buildRenderState = initRenderStateBuilder();
-    const initialState: Parameters<typeof buildRenderState>[0] = {
-      watchedFields: new Set(["topics", "currentFrame", "allFrames"]),
-      playerState: {
-        presence: PlayerPresence.INITIALIZING,
-        capabilities: [],
-        profile: undefined,
-        playerId: "test",
-        progress: {
-          messageCache: {
-            startTime: { sec: 0, nsec: 0 },
-            blocks: [
-              {
-                sizeInBytes: 0,
-                messagesByTopic: {
-                  test: [
-                    {
-                      topic: "test",
-                      schemaName: "schema",
-                      receiveTime: { sec: 1, nsec: 0 },
-                      sizeInBytes: 1,
-                      message: { from: "allFrames" },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      },
-      appSettings: undefined,
-      currentFrame: [
-        {
-          topic: "test",
-          schemaName: "schema",
-          receiveTime: { sec: 0, nsec: 0 },
-          sizeInBytes: 1,
-          message: { from: "currentFrame" },
-        },
-      ],
-      colorScheme: undefined,
-      globalVariables: {},
-      hoverValue: undefined,
-      sharedPanelState: {},
-      sortedTopics: [{ name: "test", schemaName: "schema" }],
-      subscriptions: [
-        { topic: "test" },
-        { topic: "test", convertTo: "otherSchema", preload: true },
-      ],
-      messageConverters: [
-        {
-          fromSchemaName: "schema",
-          toSchemaName: "otherSchema",
-          converter: () => {
-            return 1;
-          },
-        },
-        {
-          fromSchemaName: "schema",
-          toSchemaName: "anotherSchema",
-          converter: () => {
-            return 2;
-          },
-        },
-      ],
-    };
-
+    const initialState = makeInitialState();
     const state1 = buildRenderState(initialState);
-    expect(state1).toEqual({
+
+    const expectedState1 = {
       topics: [
         {
           name: "test",
@@ -818,7 +821,9 @@ describe("renderState", () => {
           topic: "test",
         },
       ],
-    });
+    };
+
+    expect(state1).toEqual(expectedState1);
 
     // snapshot first state current frame
     const state1CurrentFrame = state1?.currentFrame;
@@ -835,14 +840,7 @@ describe("renderState", () => {
     expect(state2?.currentFrame).not.toEqual(state1CurrentFrame);
 
     expect(state2).toEqual({
-      topics: [
-        {
-          name: "test",
-          schemaName: "schema",
-          datatype: "schema",
-          convertibleTo: ["otherSchema", "anotherSchema"],
-        },
-      ],
+      topics: expectedState1.topics,
       currentFrame: [
         {
           topic: "test",
@@ -860,6 +858,41 @@ describe("renderState", () => {
         },
       ],
       allFrames: [
+        ...expectedState1.allFrames,
+        {
+          message: 2,
+          originalMessageEvent: {
+            message: { from: "allFrames" },
+            receiveTime: { nsec: 0, sec: 1 },
+            schemaName: "schema",
+            sizeInBytes: 1,
+            topic: "test",
+          },
+          receiveTime: { nsec: 0, sec: 1 },
+          schemaName: "anotherSchema",
+          sizeInBytes: 1,
+          topic: "test",
+        },
+      ],
+    });
+  });
+
+  it("should deliver new allframes when a second converter from the same topic is enabled", () => {
+    const buildRenderState = initRenderStateBuilder();
+    const initialState = makeInitialState();
+    const state1 = buildRenderState(initialState);
+
+    const expectedState1 = {
+      topics: [
+        {
+          name: "test",
+          schemaName: "schema",
+          datatype: "schema",
+          convertibleTo: ["otherSchema", "anotherSchema"],
+        },
+      ],
+      currentFrame: expect.any(Array),
+      allFrames: [
         {
           message: { from: "allFrames" },
           receiveTime: { nsec: 0, sec: 1 },
@@ -881,6 +914,28 @@ describe("renderState", () => {
           sizeInBytes: 1,
           topic: "test",
         },
+      ],
+    };
+
+    expect(state1).toEqual(expectedState1);
+
+    // snapshot first state current frame
+    const state1CurrentFrame = state1?.currentFrame;
+
+    const state2 = buildRenderState(
+      produce(initialState, (draft) => {
+        draft.currentFrame = undefined;
+        draft.playerState!.progress.messageCache = undefined;
+        draft.subscriptions.push({ topic: "test", convertTo: "anotherSchema", preload: true });
+      }),
+    );
+
+    expect(state2?.currentFrame).not.toEqual(state1CurrentFrame);
+
+    expect(state2).toEqual({
+      topics: expectedState1.topics,
+      currentFrame: expect.any(Array),
+      allFrames: [
         {
           message: 2,
           originalMessageEvent: {
@@ -978,82 +1033,5 @@ describe("renderState", () => {
 
       expect(state).toEqual(undefined);
     }
-  });
-});
-
-describe("forEachSortedArrays", () => {
-  it("should not call forEach for empty arrays", () => {
-    const forEach = jest.fn();
-    const arr: number[] = [];
-    forEachSortedArrays([arr, arr], (a, b) => a - b, forEach);
-    expect(forEach).not.toHaveBeenCalled();
-  });
-  it("merges arrays with exclusive ranges", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [1, 2, 3];
-    const arr2 = [4, 5, 6];
-
-    forEachSortedArrays([arr1, arr2], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 2, 3, 4, 5, 6]);
-  });
-  it("merges two interleaved arrays", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [1, 3, 5];
-    const arr2 = [2, 4, 6];
-
-    forEachSortedArrays([arr1, arr2], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 2, 3, 4, 5, 6]);
-  });
-  it("merges three interleaved arrays", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [1, 4, 7];
-    const arr2 = [2, 5, 8];
-    const arr3 = [3, 6, 9];
-
-    forEachSortedArrays([arr1, arr2, arr3], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  });
-  it("merges three exclusive arrays", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [4, 5, 6];
-    const arr2 = [1, 2, 3];
-    const arr3 = [7, 8, 9];
-
-    forEachSortedArrays([arr1, arr2, arr3], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  });
-  it("merges three identical arrays", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [1, 2, 3];
-    const arr2 = [1, 2, 3];
-    const arr3 = [1, 2, 3];
-
-    forEachSortedArrays([arr1, arr2, arr3], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 1, 1, 2, 2, 2, 3, 3, 3]);
-  });
-  it("merges two identical arrays and one empty array", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [1, 2, 3];
-    const arr2 = [1, 2, 3];
-    const arr3: number[] = [];
-
-    forEachSortedArrays([arr1, arr2, arr3], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 1, 2, 2, 3, 3]);
-  });
-  it("merge arrays of all the same number and a sequence of numbers", () => {
-    const acc: number[] = [];
-    const forEach = (item: number) => acc.push(item);
-    const arr1 = [3, 3, 3];
-    const arr2 = [1, 2, 3, 4];
-    const arr3: number[] = [];
-
-    forEachSortedArrays([arr1, arr2, arr3], (a, b) => a - b, forEach);
-    expect(acc).toEqual([1, 2, 3, 3, 3, 3, 4]);
   });
 });
