@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import memoizeWeak from "memoize-weak";
+import moize from "moize";
 
 import { filterMap } from "@foxglove/den/collection";
 import { compare, toSec } from "@foxglove/rostime";
@@ -52,10 +52,6 @@ export type BuilderRenderStateInput = {
 
 type BuildRenderStateFn = (input: BuilderRenderStateInput) => Readonly<RenderState> | undefined;
 
-const memoMapDifference = memoizeWeak(mapDifference);
-
-const memoCollateTopicSchemaConversions = memoizeWeak(collateTopicSchemaConversions);
-
 /**
  * initRenderStateBuilder creates a function that transforms render state input into a new
  * RenderState
@@ -75,6 +71,12 @@ function initRenderStateBuilder(): BuildRenderStateFn {
   let prevSharedPanelState: BuilderRenderStateInput["sharedPanelState"];
   let prevCurrentFrame: RenderState["currentFrame"];
   let prevCollatedConversions: undefined | TopicSchemaConversions;
+
+  // Pull these memoized versions into the closure so they are scoped to the lifetime of
+  // the panel. They default to maxSize 1 so they only cache the most recent set of
+  // arguments.
+  const memoMapDifference = moize(mapDifference);
+  const memoCollateTopicSchemaConversions = moize(collateTopicSchemaConversions);
 
   const prevRenderState: RenderState = {};
 
