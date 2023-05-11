@@ -5,8 +5,7 @@
 import { transform } from "lodash";
 
 import { Time } from "@foxglove/rostime";
-import { MessageEvent } from "@foxglove/studio";
-import { ParameterValue } from "@foxglove/studio-base/../../studio/src";
+import { MessageEvent, ParameterValue } from "@foxglove/studio";
 import { GlobalVariables } from "@foxglove/studio-base/hooks/useGlobalVariables";
 import {
   AdvertiseOptions,
