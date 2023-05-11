@@ -12,6 +12,10 @@ import { Topic as PlayerTopic } from "@foxglove/studio-base/players/types";
 type Brand<K, T> = K & { __brand: T };
 type ConverterKey = Brand<string, "ConverterKey">;
 
+type MessageConverter = RegisterMessageConverterArgs<unknown>;
+
+type TopicSchemaConverterMap = Map<ConverterKey, MessageConverter[]>;
+
 // Create a string lookup key from a message event
 //
 // The string key uses a newline delimeter to avoid producting the same key for topic/schema name
@@ -26,7 +30,7 @@ function converterKey(topic: string, schema: string): ConverterKey {
  */
 export function convertMessage(
   messageEvent: DeepReadonly<MessageEvent<unknown>>,
-  converters: DeepReadonly<Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>>,
+  converters: DeepReadonly<TopicSchemaConverterMap>,
   convertedMessages: MessageEvent<unknown>[],
 ): void {
   const key = converterKey(messageEvent.topic, messageEvent.schemaName);
@@ -58,8 +62,6 @@ export function mapDifference<K, V>(a: Map<K, V[]>, b: undefined | Map<K, V[]>):
   return result;
 }
 
-type TopicSchemaConverterMap = Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>;
-
 export type TopicSchemaConversions = {
   // Topics which we are subscribed without a conversion, these are topics we
   // want to receive the original message.
@@ -85,9 +87,9 @@ export type TopicSchemaConversions = {
 export function collateTopicSchemaConversions(
   subscriptions: readonly Subscription[],
   sortedTopics: readonly PlayerTopic[],
-  messageConverters: undefined | readonly RegisterMessageConverterArgs<unknown>[],
+  messageConverters: undefined | readonly MessageConverter[],
 ): TopicSchemaConversions {
-  const topicSchemaConverters = new Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]>();
+  const topicSchemaConverters: TopicSchemaConverterMap = new Map();
   const unconvertedSubscriptionTopics: Set<string> = new Set();
 
   // Bin the subscriptions into two sets: those which want a conversion and those that do not.
