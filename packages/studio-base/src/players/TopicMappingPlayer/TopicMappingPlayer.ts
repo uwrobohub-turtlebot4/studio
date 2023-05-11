@@ -51,6 +51,20 @@ function mapMessages(
   });
 }
 
+function mapPublishedTopics(
+  topics: Map<string, Set<string>>,
+  mappings: TopicMapping,
+): Map<string, Set<string>> {
+  return new Map([...topics].map(([key, value]) => [mappings.get(key) ?? key, value]));
+}
+
+function mapSubscribedTopics(
+  topics: Map<string, Set<string>>,
+  mappings: TopicMapping,
+): Map<string, Set<string>> {
+  return new Map([...topics].map(([key, value]) => [mappings.get(key) ?? key, value]));
+}
+
 function mapTopics(topics: Topic[], mappings: TopicMapping): Topic[] {
   return topics.map((topic) => {
     return {
@@ -75,8 +89,14 @@ function mapSubscriptions(
 export class TopicMappingPlayer implements Player {
   #listener?: (arg0: PlayerState) => Promise<void>;
   readonly #player: Player;
-  readonly #inverseMappings: Map<string, string> = new Map([["/remapped_imu", "/imu"]]);
-  readonly #mappings: Map<string, string> = new Map([["/imu", "/remapped_imu"]]);
+  readonly #inverseMappings: Map<string, string> = new Map([
+    ["/remapped_cam_front/image_rect_compressed", "/CAM_FRONT/image_rect_compressed"],
+    ["/remapped_cam_front/camera_info", "/CAM_FRONT/camera_info"],
+  ]);
+  readonly #mappings: Map<string, string> = new Map([
+    ["/CAM_FRONT/image_rect_compressed", "/remapped_cam_front/image_rect_compressed"],
+    ["/CAM_FRONT/camera_info", "/remapped_cam_front/camera_info"],
+  ]);
 
   public constructor(player: Player) {
     this.#player = player;
@@ -139,16 +159,31 @@ export class TopicMappingPlayer implements Player {
 
   async #onPlayerState(playerState: PlayerState) {
     const newState = { ...playerState };
+
     if (newState.activeData) {
       newState.activeData.topics = mapTopics(newState.activeData.topics, this.#mappings);
       newState.activeData.messages = mapMessages(newState.activeData.messages, this.#mappings);
+      if (newState.activeData.publishedTopics) {
+        newState.activeData.publishedTopics = mapPublishedTopics(
+          newState.activeData.publishedTopics,
+          this.#mappings,
+        );
+      }
+      if (newState.activeData.subscribedTopics) {
+        newState.activeData.subscribedTopics = mapSubscribedTopics(
+          newState.activeData.subscribedTopics,
+          this.#mappings,
+        );
+      }
     }
+
     if (newState.progress.messageCache?.blocks) {
       newState.progress.messageCache.blocks = mapBlocks(
         newState.progress.messageCache.blocks,
         this.#mappings,
       );
     }
+
     await this.#listener?.(newState);
   }
 }
