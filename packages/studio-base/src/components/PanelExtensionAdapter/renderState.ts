@@ -273,9 +273,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
             );
             if (converters) {
               for (const converter of converters) {
-                const convertedMessage = converter.converter(messageEvent.message, {
-                  publishTime: messageEvent.publishTime,
-                });
+                const convertedMessage = converter.converter(messageEvent.message, messageEvent);
                 postProcessedFrame.push({
                   topic: messageEvent.topic,
                   schemaName: converter.toSchemaName,
@@ -332,9 +330,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
               );
               if (converters) {
                 for (const converter of converters) {
-                  const convertedMessage = converter.converter(messageEvent.message, {
-                    publishTime: messageEvent.publishTime,
-                  });
+                  const convertedMessage = converter.converter(messageEvent.message, messageEvent);
                   frames.push({
                     topic: messageEvent.topic,
                     schemaName: converter.toSchemaName,
