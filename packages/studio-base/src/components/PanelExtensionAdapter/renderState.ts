@@ -187,9 +187,9 @@ function initRenderStateBuilder(): BuildRenderStateFn {
     }
 
     if (watchedFields.has("currentFrame")) {
-      if (currentFrame) {
-        // If we have a new frame, emit that frame and process all messages on
-        // that frame. Only process unconverted messages on currentFrame.
+      if (currentFrame && currentFrame !== prevCurrentFrame) {
+        // If we have a new frame, emit that frame and process all messages on that frame.
+        // Unconverted messages are only processed on a new frame.
         const postProcessedFrame: MessageEvent<unknown>[] = [];
         for (const messageEvent of currentFrame) {
           if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
@@ -201,16 +201,16 @@ function initRenderStateBuilder(): BuildRenderStateFn {
         shouldRender = true;
       } else if (conversionsChanged) {
         // If we don't have a new frame but our conversions have changed, run
-        // only the new conversions on the previous frame.
+        // only the new conversions on our most recent available frame.
         const postProcessedFrame: MessageEvent<unknown>[] = [];
-        for (const messageEvent of prevCurrentFrame ?? []) {
+        for (const messageEvent of currentFrame ?? prevCurrentFrame ?? []) {
           convertMessage(messageEvent, newConverters, postProcessedFrame);
         }
         renderState.currentFrame = postProcessedFrame;
         shouldRender = true;
-      } else if (prevCurrentFrame !== currentFrame) {
-        // Otherwise if we're replacing a non-empty frame with an empty frame,
-        // include the empty frame in the new render state.
+      } else if (currentFrame !== prevCurrentFrame) {
+        // Otherwise if we're replacing a non-empty frame with an empty frame and
+        // conversions haven't changed, include the empty frame in the new render state.
         renderState.currentFrame = currentFrame;
         shouldRender = true;
       }
