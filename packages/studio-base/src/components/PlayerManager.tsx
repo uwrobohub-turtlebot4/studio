@@ -36,6 +36,7 @@ import { GlobalVariables } from "@foxglove/studio-base/hooks/useGlobalVariables"
 import useIndexedDbRecents, { RecentRecord } from "@foxglove/studio-base/hooks/useIndexedDbRecents";
 import useWarnImmediateReRender from "@foxglove/studio-base/hooks/useWarnImmediateReRender";
 import AnalyticsMetricsCollector from "@foxglove/studio-base/players/AnalyticsMetricsCollector";
+import { TopicMappingPlayer } from "@foxglove/studio-base/players/TopicMappingPlayer/TopicMappingPlayer";
 import UserNodePlayer from "@foxglove/studio-base/players/UserNodePlayer";
 import { Player } from "@foxglove/studio-base/players/types";
 import { UserNodes } from "@foxglove/studio-base/types/panels";
@@ -93,15 +94,20 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
   // the message pipeline
   const globalVariablesRef = useLatest(globalVariables);
 
+  const topicMapper = useMemo(
+    () => (basePlayer ? new TopicMappingPlayer(basePlayer) : undefined),
+    [basePlayer],
+  );
+
   const player = useMemo(() => {
-    if (!basePlayer) {
+    if (!topicMapper) {
       return undefined;
     }
 
-    const userNodePlayer = new UserNodePlayer(basePlayer, userNodeActions);
+    const userNodePlayer = new UserNodePlayer(topicMapper, userNodeActions);
     userNodePlayer.setGlobalVariables(globalVariablesRef.current);
     return userNodePlayer;
-  }, [basePlayer, globalVariablesRef, userNodeActions]);
+  }, [globalVariablesRef, topicMapper, userNodeActions]);
 
   useLayoutEffect(() => void player?.setUserNodes(userNodes), [player, userNodes]);
 
