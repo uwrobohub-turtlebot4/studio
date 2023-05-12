@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import moize from "moize";
+import memoizeWeak from "memoize-weak";
 
 import { filterMap } from "@foxglove/den/collection";
 import { compare, toSec } from "@foxglove/rostime";
@@ -73,10 +73,9 @@ function initRenderStateBuilder(): BuildRenderStateFn {
   let prevCollatedConversions: undefined | TopicSchemaConversions;
 
   // Pull these memoized versions into the closure so they are scoped to the lifetime of
-  // the panel. They default to maxSize 1 so they only cache the most recent set of
-  // arguments.
-  const memoMapDifference = moize(mapDifference);
-  const memoCollateTopicSchemaConversions = moize(collateTopicSchemaConversions);
+  // the panel.
+  const memoMapDifference = memoizeWeak(mapDifference);
+  const memoCollateTopicSchemaConversions = memoizeWeak(collateTopicSchemaConversions);
 
   const prevRenderState: RenderState = {};
 
