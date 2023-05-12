@@ -70,6 +70,10 @@ export interface ICurrentLayout {
      * asynchronously and don't want to update every time the state changes.
      */
     getCurrentLayoutState: () => LayoutState;
+    /**
+     * Set the layout data for the current layout.
+     */
+    setCurrentLayoutData: (data: LayoutData) => void;
 
     setSelectedLayoutId: (id: LayoutID | undefined) => void;
 

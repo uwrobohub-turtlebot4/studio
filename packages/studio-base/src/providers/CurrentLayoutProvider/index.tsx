@@ -26,6 +26,7 @@ import {
   CreateTabPanelPayload,
   DropPanelPayload,
   EndDragPayload,
+  LayoutData,
   MoveTabPayload,
   PanelsActions,
   SaveConfigsPayload,
@@ -196,6 +197,20 @@ export default function CurrentLayoutProvider({
     [setLayoutState],
   );
 
+  const setCurrentLayoutData = useCallback(
+    (data: LayoutData) => {
+      setLayoutState({
+        selectedLayout: {
+          id: "id-does-not-matter" as LayoutID,
+          loading: false,
+          data,
+          name: "layout",
+        },
+      });
+    },
+    [setLayoutState],
+  );
+
   // Changes to the layout storage from external user actions (such as resetting a layout to a
   // previous saved state) need to trigger setLayoutState.
   useEffect(() => {
@@ -265,6 +280,7 @@ export default function CurrentLayoutProvider({
     () => ({
       setSelectedLayoutId,
       getCurrentLayoutState: () => layoutStateRef.current,
+      setCurrentLayoutData,
 
       savePanelConfigs: (payload: SaveConfigsPayload) =>
         performAction({ type: "SAVE_PANEL_CONFIGS", payload }),
@@ -334,7 +350,7 @@ export default function CurrentLayoutProvider({
       startDrag: (payload: StartDragPayload) => performAction({ type: "START_DRAG", payload }),
       endDrag: (payload: EndDragPayload) => performAction({ type: "END_DRAG", payload }),
     }),
-    [analytics, performAction, setSelectedLayoutId, setSelectedPanelIds],
+    [analytics, performAction, setCurrentLayoutData, setSelectedLayoutId, setSelectedPanelIds],
   );
 
   const value: ICurrentLayout = useShallowMemo({
