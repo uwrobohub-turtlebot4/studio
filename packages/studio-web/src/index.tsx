@@ -8,7 +8,7 @@ import ReactDOM from "react-dom";
 import Logger from "@foxglove/log";
 import { IDataSourceFactory } from "@foxglove/studio-base";
 
-import VersionBanner from "./VersionBanner";
+//import VersionBanner from "./VersionBanner";
 
 const log = Logger.getLogger(__filename);
 
@@ -44,24 +44,24 @@ export async function main(params: MainParams = {}): Promise<void> {
   const chromeVersion = chromeMatch ? parseInt(chromeMatch[1] ?? "", 10) : 0;
   const isChrome = chromeVersion !== 0;
 
-  const canRenderApp = typeof BigInt64Array === "function" && typeof BigUint64Array === "function";
-  const banner = (
-    <VersionBanner
-      isChrome={isChrome}
-      currentVersion={chromeVersion}
-      isDismissable={canRenderApp}
-    />
-  );
+  //const canRenderApp = typeof BigInt64Array === "function" && typeof BigUint64Array === "function";
+  //const banner = (
+  //  <VersionBanner
+  //    isChrome={isChrome}
+  //    currentVersion={chromeVersion}
+  //    isDismissable={canRenderApp}
+  //  />
+  //);
 
-  if (!canRenderApp) {
-    ReactDOM.render(
-      <StrictMode>
-        <LogAfterRender>{banner}</LogAfterRender>
-      </StrictMode>,
-      rootEl,
-    );
-    return;
-  }
+  //if (!canRenderApp) {
+  //  ReactDOM.render(
+  //    <StrictMode>
+  //      <LogAfterRender>{banner}</LogAfterRender>
+  //    </StrictMode>,
+  //    rootEl,
+  //  );
+  //  return;
+  //}
 
   const { installDevtoolsFormatters, overwriteFetch, waitForFonts, initI18n } = await import(
     "@foxglove/studio-base"
@@ -77,7 +77,6 @@ export async function main(params: MainParams = {}): Promise<void> {
   ReactDOM.render(
     <StrictMode>
       <LogAfterRender>
-        {banner}
         <Root extraProviders={params.extraProviders} dataSources={params.dataSources} />
       </LogAfterRender>
     </StrictMode>,
