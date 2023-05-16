@@ -22,6 +22,7 @@ describe("renderState", () => {
       subscriptions: [],
       messageConverters: [
         {
+          version: "1",
           fromSchemaName: "schema",
           toSchemaName: "more",
           converter: () => {},
@@ -397,6 +398,7 @@ describe("renderState", () => {
       ],
       messageConverters: [
         {
+          version: "1",
           fromSchemaName: "schema",
           toSchemaName: "otherSchema",
           converter: () => {
@@ -487,6 +489,7 @@ describe("renderState", () => {
       subscriptions: [{ topic: "another", convertTo: "destschema" }],
       messageConverters: [
         {
+          version: "1",
           fromSchemaName: "srcschema",
           toSchemaName: "destschema",
           converter: () => {
@@ -494,6 +497,7 @@ describe("renderState", () => {
           },
         },
         {
+          version: "2",
           fromSchemaName: "srcschemade",
           toSchemaName: "stschema",
           converter: () => {
@@ -541,6 +545,9 @@ describe("renderState", () => {
   // different _to_ schemas.
   it("should support multiple _from_ converters with different _to_", () => {
     const buildRenderState = initRenderStateBuilder();
+    const converter1 = jest.fn().mockImplementation(() => 1);
+    const converter2 = jest.fn().mockImplementation(() => 2);
+
     const state = buildRenderState({
       watchedFields: new Set(["topics", "currentFrame", "allFrames"]),
       playerState: {
@@ -592,20 +599,45 @@ describe("renderState", () => {
       ],
       messageConverters: [
         {
+          version: "1",
           fromSchemaName: "schema",
           toSchemaName: "otherSchema",
-          converter: () => {
-            return 1;
-          },
+          converter: converter1,
         },
         {
+          version: "2",
           fromSchemaName: "schema",
           toSchemaName: "anotherSchema",
-          converter: () => {
-            return 2;
-          },
+          converter: converter2,
         },
       ],
+    });
+
+    expect(converter1).toHaveBeenNthCalledWith(1, { from: "currentFrame" });
+    expect(converter1).toHaveBeenNthCalledWith(2, { from: "allFrames" });
+    expect(converter2).toHaveBeenNthCalledWith(1, {
+      message: {
+        from: "currentFrame",
+      },
+      receiveTime: {
+        nsec: 0,
+        sec: 0,
+      },
+      schemaName: "schema",
+      sizeInBytes: 1,
+      topic: "test",
+    });
+    expect(converter2).toHaveBeenNthCalledWith(2, {
+      message: {
+        from: "allFrames",
+      },
+      receiveTime: {
+        nsec: 0,
+        sec: 1,
+      },
+      schemaName: "schema",
+      sizeInBytes: 1,
+      topic: "test",
     });
 
     expect(state).toEqual({

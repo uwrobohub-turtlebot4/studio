@@ -28,6 +28,38 @@ function fakeExtension(overrides: Partial<ExtensionInfo>): ExtensionInfo {
   };
 }
 
+function fakeExtensionLoader(devDependencies: Record<string, string>): ExtensionLoader {
+  const source = `
+  module.exports = {
+      activate: function(ctx) {
+          ctx.registerMessageConverter({
+              fromSchemaName: "from.Schema",
+              toSchemaName: "to.Schema",
+              converter: (msg) => msg,
+          })
+      }
+  }
+`;
+
+  const loadExtension = jest.fn().mockResolvedValue(source);
+  const mockPrivateLoader: ExtensionLoader = {
+    namespace: "org",
+    getExtensions: jest.fn().mockResolvedValue([
+      fakeExtension({
+        namespace: "org",
+        name: "sample",
+        version: "1",
+        devDependencies,
+      }),
+    ]),
+    loadExtension,
+    installExtension: jest.fn(),
+    uninstallExtension: jest.fn(),
+  };
+
+  return mockPrivateLoader;
+}
+
 describe("ExtensionCatalogProvider", () => {
   it("should load an extension from the loaders", async () => {
     const source = `
@@ -142,29 +174,8 @@ describe("ExtensionCatalogProvider", () => {
     ]);
   });
 
-  it("should register a message converter", async () => {
-    const source = `
-        module.exports = {
-            activate: function(ctx) {
-                ctx.registerMessageConverter({
-                    fromSchemaName: "from.Schema",
-                    toSchemaName: "to.Schema",
-                    converter: (msg) => msg,
-                })
-            }
-        }
-    `;
-
-    const loadExtension = jest.fn().mockResolvedValue(source);
-    const mockPrivateLoader: ExtensionLoader = {
-      namespace: "org",
-      getExtensions: jest
-        .fn()
-        .mockResolvedValue([fakeExtension({ namespace: "org", name: "sample", version: "1" })]),
-      loadExtension,
-      installExtension: jest.fn(),
-      uninstallExtension: jest.fn(),
-    };
+  it("should register a v1 message converter", async () => {
+    const mockPrivateLoader = fakeExtensionLoader({});
 
     const { result, waitFor } = renderHook(() => useExtensionCatalog((state) => state), {
       initialProps: {},
@@ -175,12 +186,38 @@ describe("ExtensionCatalogProvider", () => {
       ),
     });
 
-    await waitFor(() => expect(loadExtension).toHaveBeenCalledTimes(1));
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    await waitFor(() => expect(mockPrivateLoader.loadExtension).toHaveBeenCalledTimes(1));
     expect(result.current.installedMessageConverters).toEqual([
       {
         fromSchemaName: "from.Schema",
         toSchemaName: "to.Schema",
         converter: expect.any(Function),
+        version: "1",
+      },
+    ]);
+  });
+
+  it("should register a v2 message converter", async () => {
+    const mockPrivateLoader = fakeExtensionLoader({ "@foxglove/studio": "1.54.0" });
+
+    const { result, waitFor } = renderHook(() => useExtensionCatalog((state) => state), {
+      initialProps: {},
+      wrapper: ({ children }) => (
+        <ExtensionCatalogProvider loaders={[mockPrivateLoader]}>
+          {children}
+        </ExtensionCatalogProvider>
+      ),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    await waitFor(() => expect(mockPrivateLoader.loadExtension).toHaveBeenCalledTimes(1));
+    expect(result.current.installedMessageConverters).toEqual([
+      {
+        fromSchemaName: "from.Schema",
+        toSchemaName: "to.Schema",
+        converter: expect.any(Function),
+        version: "2",
       },
     ]);
   });
