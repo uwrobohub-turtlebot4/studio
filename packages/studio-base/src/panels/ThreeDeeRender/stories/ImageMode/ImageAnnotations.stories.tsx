@@ -349,6 +349,7 @@ export const MessageConverterSupport: StoryObj = {
       messageConverters: [
         // both original and converted schemas are supported
         {
+          version: "1",
           fromSchemaName: "foxglove.ImageAnnotations",
           toSchemaName: "foxglove_msgs/ImageAnnotations",
           converter: (_msg): Partial<ImageAnnotations> => ({
@@ -372,6 +373,7 @@ export const MessageConverterSupport: StoryObj = {
         },
         // original schema is not supported, but two converters are supported
         {
+          version: "1",
           fromSchemaName: "MyCustomSchema",
           toSchemaName: "foxglove_msgs/ImageAnnotations",
           converter: (_msg): Partial<ImageAnnotations> => ({
@@ -400,6 +402,7 @@ export const MessageConverterSupport: StoryObj = {
           }),
         },
         {
+          version: "1",
           fromSchemaName: "MyCustomSchema",
           toSchemaName: "foxglove_msgs/msg/ImageAnnotations",
           converter: (_msg): Partial<ImageAnnotations> => ({
@@ -423,6 +426,7 @@ export const MessageConverterSupport: StoryObj = {
         },
         // unrelated converter should not be shown
         {
+          version: "1",
           fromSchemaName: "MyCustomSchema",
           toSchemaName: "foxglove.SceneUpdate",
           converter: (msg) => msg,

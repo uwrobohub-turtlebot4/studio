@@ -21,12 +21,7 @@ import { useTranslation } from "react-i18next";
 import { Mosaic, MosaicNode, MosaicWindow } from "react-mosaic-component";
 
 import { useShallowMemo } from "@foxglove/hooks";
-import {
-  MessageEvent,
-  ParameterValue,
-  RegisterMessageConverterArgs,
-  SettingsTree,
-} from "@foxglove/studio";
+import { MessageEvent, ParameterValue, SettingsTree } from "@foxglove/studio";
 import MockMessagePipelineProvider from "@foxglove/studio-base/components/MessagePipeline/MockMessagePipelineProvider";
 import SettingsTreeEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
 import AppConfigurationContext from "@foxglove/studio-base/context/AppConfigurationContext";
@@ -37,6 +32,7 @@ import {
   useSelectedPanels,
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
 import { PanelsActions } from "@foxglove/studio-base/context/CurrentLayoutContext/actions";
+import { VersionedMessageConverter } from "@foxglove/studio-base/context/ExtensionCatalogContext";
 import PanelCatalogContext, {
   PanelCatalog,
 } from "@foxglove/studio-base/context/PanelCatalogContext";
@@ -95,7 +91,7 @@ export type Fixture = {
   setPublishers?: (publisherId: string, advertisements: AdvertiseOptions[]) => void;
   setSubscriptions?: ComponentProps<typeof MockMessagePipelineProvider>["setSubscriptions"];
   setParameter?: (key: string, value: ParameterValue) => void;
-  messageConverters?: readonly RegisterMessageConverterArgs<unknown>[];
+  messageConverters?: readonly VersionedMessageConverter<unknown>[];
   panelState?: Partial<PanelStateStore>;
 };
 
