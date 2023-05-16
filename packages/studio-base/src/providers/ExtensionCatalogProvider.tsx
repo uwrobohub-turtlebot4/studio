@@ -4,7 +4,7 @@
 
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { compare } from "semver";
+import semverCompare from "semver/functions/compare";
 import { StoreApi, createStore } from "zustand";
 
 import Logger from "@foxglove/log";
@@ -73,7 +73,7 @@ function activateExtension(
         `Extension ${extension.qualifiedName} registering message converter from: ${args.fromSchemaName} to: ${args.toSchemaName}`,
       );
       const studioBuildDependency = extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0";
-      if (compare(studioBuildDependency, "1.54.0") >= 0) {
+      if (semverCompare(studioBuildDependency, "1.54.0") >= 0) {
         messageConverters.push({ ...args, version: "2" } as VersionedMessageConverter<unknown>);
       } else {
         messageConverters.push({ ...args, version: "1" } as VersionedMessageConverter<unknown>);
