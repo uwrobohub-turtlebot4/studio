@@ -8,11 +8,11 @@ import {
   AppSettingValue,
   MessageEvent,
   ParameterValue,
-  RegisterMessageConverterArgs,
   RenderState,
   Subscription,
   Topic,
 } from "@foxglove/studio";
+import { VersionedMessageConverter } from "@foxglove/studio-base/context/ExtensionCatalogContext";
 import {
   EMPTY_GLOBAL_VARIABLES,
   GlobalVariables,
@@ -28,7 +28,7 @@ type BuilderRenderStateInput = {
   currentFrame: MessageEvent<unknown>[] | undefined;
   globalVariables: GlobalVariables;
   hoverValue: HoverValue | undefined;
-  messageConverters?: readonly RegisterMessageConverterArgs<unknown>[];
+  messageConverters?: readonly VersionedMessageConverter<unknown>[];
   playerState: PlayerState | undefined;
   sharedPanelState: Record<string, unknown> | undefined;
   sortedTopics: readonly PlayerTopic[];
@@ -80,8 +80,7 @@ function initRenderStateBuilder(): BuildRenderStateFn {
   // This allows the runtime message event handler logic which builds currentFrame and allFrames to
   // lookup whether the incoming message event has converters to run by looking up the topic +
   // schema of the message event in this map.
-  const topicSchemaConverters: Map<ConverterKey, RegisterMessageConverterArgs<unknown>[]> =
-    new Map();
+  const topicSchemaConverters: Map<ConverterKey, VersionedMessageConverter<unknown>[]> = new Map();
 
   const prevRenderState: RenderState = {};
 
@@ -273,7 +272,10 @@ function initRenderStateBuilder(): BuildRenderStateFn {
             );
             if (converters) {
               for (const converter of converters) {
-                const convertedMessage = converter.converter(messageEvent.message, messageEvent);
+                const convertedMessage =
+                  converter.version === "1"
+                    ? converter.converter(messageEvent.message)
+                    : converter.converter(messageEvent);
                 postProcessedFrame.push({
                   topic: messageEvent.topic,
                   schemaName: converter.toSchemaName,
@@ -330,7 +332,10 @@ function initRenderStateBuilder(): BuildRenderStateFn {
               );
               if (converters) {
                 for (const converter of converters) {
-                  const convertedMessage = converter.converter(messageEvent.message, messageEvent);
+                  const convertedMessage =
+                    converter.version === "1"
+                      ? converter.converter(messageEvent.message)
+                      : converter.converter(messageEvent);
                   frames.push({
                     topic: messageEvent.topic,
                     schemaName: converter.toSchemaName,

@@ -11,6 +11,7 @@ export type ExtensionNamespace =
  */
 export type ExtensionInfo = {
   id: string;
+  devDependencies?: Record<string, string>;
   description: string;
   displayName: string;
   homepage: string;

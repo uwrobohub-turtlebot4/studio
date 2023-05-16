@@ -4,7 +4,8 @@
 
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { createStore, StoreApi } from "zustand";
+import { compare } from "semver";
+import { StoreApi, createStore } from "zustand";
 
 import Logger from "@foxglove/log";
 import { ExtensionContext, ExtensionModule, RegisterMessageConverterArgs } from "@foxglove/studio";
@@ -12,6 +13,7 @@ import {
   ExtensionCatalog,
   ExtensionCatalogContext,
   RegisteredPanel,
+  VersionedMessageConverter,
 } from "@foxglove/studio-base/context/ExtensionCatalogContext";
 import { ExtensionLoader } from "@foxglove/studio-base/services/ExtensionLoader";
 import { ExtensionInfo, ExtensionNamespace } from "@foxglove/studio-base/types/Extensions";
@@ -20,7 +22,7 @@ const log = Logger.getLogger(__filename);
 
 type ContributionPoints = {
   panels: Record<string, RegisteredPanel>;
-  messageConverters: RegisterMessageConverterArgs<unknown>[];
+  messageConverters: VersionedMessageConverter<unknown>[];
 };
 
 function activateExtension(
@@ -31,7 +33,7 @@ function activateExtension(
   // the fully qualified id is the extension name + panel name
   const panels: Record<string, RegisteredPanel> = {};
 
-  const messageConverters: RegisterMessageConverterArgs<unknown>[] = [];
+  const messageConverters: VersionedMessageConverter<unknown>[] = [];
 
   log.debug(`Activating extension ${extension.qualifiedName}`);
 
@@ -50,7 +52,7 @@ function activateExtension(
   const ctx: ExtensionContext = {
     mode: extensionMode,
 
-    registerPanel(params) {
+    registerPanel: (params) => {
       log.debug(`Extension ${extension.qualifiedName} registering panel: ${params.name}`);
 
       const fullId = `${extension.qualifiedName}.${params.name}`;
@@ -66,11 +68,16 @@ function activateExtension(
       };
     },
 
-    registerMessageConverter<Src>(args: RegisterMessageConverterArgs<Src>) {
+    registerMessageConverter: <Src,>(args: RegisterMessageConverterArgs<Src>) => {
       log.debug(
         `Extension ${extension.qualifiedName} registering message converter from: ${args.fromSchemaName} to: ${args.toSchemaName}`,
       );
-      messageConverters.push(args as RegisterMessageConverterArgs<unknown>);
+      const studioBuildDependency = extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0";
+      if (compare(studioBuildDependency, "1.53.1") >= 0) {
+        messageConverters.push({ ...args, version: "2" } as VersionedMessageConverter<unknown>);
+      } else {
+        messageConverters.push({ ...args, version: "1" } as VersionedMessageConverter<unknown>);
+      }
     },
   };
 
@@ -95,7 +102,7 @@ function activateExtension(
 
 export function createExtensionRegistryStore(
   loaders: readonly ExtensionLoader[],
-  mockMessageConverters: readonly RegisterMessageConverterArgs<unknown>[] | undefined,
+  mockMessageConverters: readonly VersionedMessageConverter<unknown>[] | undefined,
 ): StoreApi<ExtensionCatalog> {
   return createStore((set, get) => ({
     downloadExtension: async (url: string) => {
@@ -169,7 +176,7 @@ export default function ExtensionCatalogProvider({
   mockMessageConverters,
 }: PropsWithChildren<{
   loaders: readonly ExtensionLoader[];
-  mockMessageConverters?: readonly RegisterMessageConverterArgs<unknown>[];
+  mockMessageConverters?: readonly VersionedMessageConverter<unknown>[];
 }>): JSX.Element {
   const [store] = useState(createExtensionRegistryStore(loaders, mockMessageConverters));
 

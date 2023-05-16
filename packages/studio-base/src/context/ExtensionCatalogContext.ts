@@ -15,6 +15,12 @@ export type RegisteredPanel = {
   registration: ExtensionPanelRegistration;
 };
 
+export type VersionedMessageConverter<T> =
+  | ({ version: "1" } & RegisterMessageConverterArgs<T> & {
+        converter: (msg: T) => unknown;
+      })
+  | ({ version: "2" } & RegisterMessageConverterArgs<T>);
+
 export type ExtensionCatalog = {
   downloadExtension: (url: string) => Promise<Uint8Array>;
   installExtension: (
@@ -26,7 +32,7 @@ export type ExtensionCatalog = {
 
   installedExtensions: undefined | ExtensionInfo[];
   installedPanels: undefined | Record<string, RegisteredPanel>;
-  installedMessageConverters: undefined | readonly RegisterMessageConverterArgs<unknown>[];
+  installedMessageConverters: undefined | readonly VersionedMessageConverter<unknown>[];
 };
 
 export const ExtensionCatalogContext = createContext<undefined | StoreApi<ExtensionCatalog>>(
