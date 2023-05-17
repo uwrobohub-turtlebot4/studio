@@ -22,8 +22,14 @@ import { ExtensionInfo, ExtensionNamespace } from "@foxglove/studio-base/types/E
 const log = Logger.getLogger(__filename);
 
 function extensionSupportsV2MessageConverters(extension: Immutable<ExtensionInfo>): boolean {
-  const studioBuildDependency = extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0";
-  return semverCompare(studioBuildDependency, "1.54.0") >= 0;
+  const studioBuildDependency = (
+    extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0"
+  ).replaceAll(/[^0-9.]/g, "");
+  try {
+    return semverCompare(studioBuildDependency, "1.54.0") >= 0;
+  } catch {
+    return false;
+  }
 }
 
 type ContributionPoints = {
