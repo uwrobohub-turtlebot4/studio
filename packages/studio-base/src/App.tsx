@@ -30,7 +30,6 @@ import { UserNodeStateProvider } from "./context/UserNodeStateContext";
 import CurrentLayoutProvider from "./providers/CurrentLayoutProvider";
 import ExtensionCatalogProvider from "./providers/ExtensionCatalogProvider";
 import ExtensionMarketplaceProvider from "./providers/ExtensionMarketplaceProvider";
-import LayoutManagerProvider from "./providers/LayoutManagerProvider";
 import PanelCatalogProvider from "./providers/PanelCatalogProvider";
 import UserProfileLocalStorageProvider from "./providers/UserProfileLocalStorageProvider";
 import { LaunchPreference } from "./screens/LaunchPreference";
@@ -101,7 +100,6 @@ export function App(props: AppProps): JSX.Element {
     providers.unshift(...extraProviders);
   } else {
     // Extra providers have their own layout providers
-    providers.unshift(<LayoutManagerProvider />);
     providers.unshift(<LayoutStorageContext.Provider value={layoutStorage} />);
   }
 
