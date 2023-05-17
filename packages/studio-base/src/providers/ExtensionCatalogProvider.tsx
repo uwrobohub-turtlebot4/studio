@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { Immutable } from "immer";
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import semverCompare from "semver/functions/compare";
@@ -19,6 +20,11 @@ import { ExtensionLoader } from "@foxglove/studio-base/services/ExtensionLoader"
 import { ExtensionInfo, ExtensionNamespace } from "@foxglove/studio-base/types/Extensions";
 
 const log = Logger.getLogger(__filename);
+
+function extensionSupportsV2MessageConverters(extension: Immutable<ExtensionInfo>): boolean {
+  const studioBuildDependency = extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0";
+  return semverCompare(studioBuildDependency, "1.54.0") >= 0;
+}
 
 type ContributionPoints = {
   panels: Record<string, RegisteredPanel>;
@@ -72,8 +78,7 @@ function activateExtension(
       log.debug(
         `Extension ${extension.qualifiedName} registering message converter from: ${args.fromSchemaName} to: ${args.toSchemaName}`,
       );
-      const studioBuildDependency = extension.devDependencies?.["@foxglove/studio"] ?? "0.0.0";
-      if (semverCompare(studioBuildDependency, "1.54.0") >= 0) {
+      if (extensionSupportsV2MessageConverters(extension)) {
         messageConverters.push({ ...args, version: "2" } as VersionedMessageConverter<unknown>);
       } else {
         messageConverters.push({ ...args, version: "1" } as VersionedMessageConverter<unknown>);
