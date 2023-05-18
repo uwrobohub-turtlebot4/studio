@@ -29,7 +29,6 @@ import {
 } from "./fixture";
 
 const noDiffConfig = {
-  expansion: "none",
   diffMethod: "custom",
   diffTopicPath: "",
   diffEnabled: false,
@@ -127,6 +126,7 @@ export const WithReceivetime: StoryObj = {
       <RawMessages overrideConfig={{ ...noDiffConfig, topicPath: "/foo" }} />
     </PanelSetup>
   ),
+  name: "With receiveTime",
 };
 
 export const DisplayBigValueNum: StoryObj = {
