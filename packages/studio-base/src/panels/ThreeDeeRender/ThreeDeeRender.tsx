@@ -25,7 +25,6 @@ import {
   VariableValue,
 } from "@foxglove/studio";
 import { AppSetting } from "@foxglove/studio-base/AppSetting";
-import { settingsTopicKey } from "@foxglove/studio-base/panels/ThreeDeeRender/settingsTopicKey";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 
 import type {
@@ -52,6 +51,7 @@ import {
 import type { LayerSettingsTransform } from "./renderables/FrameAxes";
 import { PublishClickEvent } from "./renderables/PublishClickTool";
 import { DEFAULT_PUBLISH_SETTINGS } from "./renderables/PublishSettings";
+import { settingsKeys } from "./settingsKeys";
 import { InterfaceMode } from "./types";
 
 const log = Logger.getLogger(__filename);
@@ -131,6 +131,7 @@ export function ThreeDeeRender(props: {
     };
 
     const completeConfig: RendererConfig = {
+      version: "2",
       cameraState,
       followMode: partialConfig.followMode ?? "follow-pose",
       followTf: partialConfig.followTf,
@@ -391,11 +392,12 @@ export function ThreeDeeRender(props: {
       rendererSubscription: RendererSubscription,
       convertTo?: string,
     ) => {
+      const settingsKey = settingsKeys.forTopic(topic.name, convertTo ?? topic.schemaName);
       let shouldSubscribe =
         rendererSubscription.shouldSubscribe?.(topic.name) ??
-        rendererSubscription.shouldSubscribe?.(settingsTopicKey(topic.name, convertTo));
+        rendererSubscription.shouldSubscribe?.(settingsKey);
       if (shouldSubscribe == undefined) {
-        if (config.topics[topic.name]?.[convertTo ?? topic.schemaName]?.visible === true) {
+        if (config.topics[settingsKey]?.visible === true) {
           shouldSubscribe = true;
         } else if (
           config.imageMode.annotations?.some(

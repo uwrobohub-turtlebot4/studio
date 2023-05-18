@@ -80,9 +80,8 @@ export type RendererConfigV1 = {
   imageMode: ImageModeConfig;
 };
 
-type RendererConfigV2 = Omit<RendererConfigV1, "topics"> & {
+type RendererConfigV2 = RendererConfigV1 & {
   version: "2";
-  topics: Record<string, Record<string, Partial<BaseSettings>>>;
 };
 
 export type AnyRendererConfig = RendererConfigV1 | RendererConfigV2;
@@ -92,12 +91,46 @@ function sclone<T>(val: T): DeepWritable<T> {
   return structuredClone(val) as DeepWritable<T>;
 }
 
+// /**
+//  * Determines the namespaced settings key for a topic. This is necessary to
+//  * prevent potential topic namespace collisions caused by message converters.
+//  *
+//  * For this to return stable results the message converters must be registered
+//  * in a consistent order. In return we can claim a converted topic directly
+//  * under /topic/topicName if there and avoid migrating existing,
+//  * non-namespaced layouts.
+//  */
+// public settingsKeyForTopic(topicName: string): string {
+//   const topic = this.renderer.topicsByName?.get(topicName);
+//   if (!topic) {
+//     return topicName;
+//   }
+
+//   // If we support this schema directly claim the unnamespaced topic name.
+//   if (this.supportedSchemas().includes(topic.schemaName)) {
+//     return topicName;
+//   }
+
+//   // If no direct handler exists and we're the first listed converter then also claim
+//   // the unnamespaced topic name.
+//   const directHandlerExists = this.renderer.schemaHandlers.has(topic.schemaName);
+//   const converterOrder = findIndex(topic.convertibleTo, (schema) =>
+//     this.supportedSchemas().includes(schema),
+//   );
+//   if (converterOrder === 0 && !directHandlerExists) {
+//     return topic.name;
+//   }
+
+//   // Otherwise we need to namespace the topic name with the converted schema.
+//   return settingsTopicKey(topic.name, topic.convertibleTo?.[converterOrder] ?? topic.schemaName);
+// }
+
 export function migrateConfig(
   oldConfig: Immutable<DeepPartial<RendererConfigV1 | RendererConfigV2>>,
 ): DeepPartial<RendererConfig> {
   if ("version" in oldConfig) {
     return sclone(oldConfig);
   }
-  const topics = {};
-  return { ...sclone(oldConfig), version: "2", topics };
+
+  return { ...sclone(oldConfig), version: "2" };
 }

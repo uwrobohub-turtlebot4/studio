@@ -6,7 +6,7 @@ import * as THREE from "three";
 
 import { toNanoSec } from "@foxglove/rostime";
 import { PoseInFrame } from "@foxglove/schemas";
-import { SettingsTreeAction, SettingsTreeFields } from "@foxglove/studio";
+import { MessageEvent, SettingsTreeAction, SettingsTreeFields } from "@foxglove/studio";
 import type { RosValue } from "@foxglove/studio-base/players/types";
 
 import { Axis, AXIS_LENGTH } from "./Axis";
@@ -38,6 +38,7 @@ import {
   TIME_ZERO,
 } from "../ros";
 import { BaseSettings, PRECISION_DISTANCE } from "../settings";
+import { settingsKeys } from "../settingsKeys";
 import { convertibleSchemaForTopic } from "../topicIsConvertibleToSchema";
 import { makePose } from "../transforms";
 
@@ -143,7 +144,8 @@ export class Poses extends SceneExtension<PoseRenderable> {
         continue;
       }
 
-      const config = (configTopics[topic.name]?.[schema] ?? {}) as Partial<LayerSettingsPose>;
+      const settingsKey = settingsKeys.forTopic(topic.name, schema);
+      const config = (configTopics[settingsKey] ?? {}) as Partial<LayerSettingsPose>;
       const type = config.type ?? DEFAULT_TYPE;
 
       const fields: SettingsTreeFields = {
@@ -193,7 +195,7 @@ export class Poses extends SceneExtension<PoseRenderable> {
       }
 
       entries.push({
-        path: ["topics", `Poses_${entries.length}`],
+        path: ["topics", settingsKey],
         node: {
           label: topic.name,
           icon: "Flag",
@@ -217,10 +219,10 @@ export class Poses extends SceneExtension<PoseRenderable> {
     this.saveSetting(path, action.payload.value);
 
     // Update the renderable
-    const topicName = path[1]!;
-    const renderable = this.renderables.get(topicName);
+    const settingsKey = path[1]!;
+    const renderable = this.renderables.get(settingsKey);
     if (renderable) {
-      const settings = this.renderer.config.topics[topicName] as
+      const settings = this.renderer.config.topics[settingsKey] as
         | Partial<LayerSettingsPose>
         | undefined;
       this.#updatePoseRenderable(
@@ -236,13 +238,13 @@ export class Poses extends SceneExtension<PoseRenderable> {
   #handlePoseStamped = (messageEvent: PartialMessageEvent<PoseStamped>): void => {
     const poseMessage = normalizePoseStamped(messageEvent.message);
     const receiveTime = toNanoSec(messageEvent.receiveTime);
-    this.#addPose(messageEvent.topic, poseMessage, messageEvent.message, receiveTime);
+    this.#addPose(messageEvent, poseMessage, receiveTime);
   };
 
   #handlePoseInFrame = (messageEvent: PartialMessageEvent<PoseInFrame>): void => {
     const poseMessage = normalizePoseInFrameToPoseStamped(messageEvent.message);
     const receiveTime = toNanoSec(messageEvent.receiveTime);
-    this.#addPose(messageEvent.topic, poseMessage, messageEvent.message, receiveTime);
+    this.#addPose(messageEvent, poseMessage, receiveTime);
   };
 
   #handlePoseWithCovariance = (
@@ -250,16 +252,15 @@ export class Poses extends SceneExtension<PoseRenderable> {
   ): void => {
     const poseMessage = normalizePoseWithCovarianceStamped(messageEvent.message);
     const receiveTime = toNanoSec(messageEvent.receiveTime);
-    this.#addPose(messageEvent.topic, poseMessage, messageEvent.message, receiveTime);
+    this.#addPose(messageEvent, poseMessage, receiveTime);
   };
 
   #addPose(
-    topic: string,
+    originalMessage: MessageEvent<Record<string, RosValue>>,
     poseMessage: PoseStamped | PoseWithCovarianceStamped,
-    originalMessage: Record<string, RosValue>,
     receiveTime: bigint,
   ): void {
-    const settingsKey = this.settingsKeyForTopic(topic);
+    const settingsKey = settingsKeys.forMessage(originalMessage);
     let renderable = this.renderables.get(settingsKey);
     if (!renderable) {
       // Set the initial settings from default values merged with any user settings
@@ -277,7 +278,7 @@ export class Poses extends SceneExtension<PoseRenderable> {
         settings,
         topic: settingsKey,
         poseMessage,
-        originalMessage,
+        originalMessage: originalMessage.message,
         axis: undefined,
         arrow: undefined,
         sphere: undefined,
@@ -290,7 +291,7 @@ export class Poses extends SceneExtension<PoseRenderable> {
     this.#updatePoseRenderable(
       renderable,
       poseMessage,
-      originalMessage,
+      originalMessage.message,
       receiveTime,
       renderable.userData.settings,
     );

@@ -19,6 +19,7 @@ import {
   TriangleListPrimitive,
 } from "@foxglove/schemas";
 import { SettingsTreeAction } from "@foxglove/studio";
+import { settingsKeys } from "@foxglove/studio-base/panels/ThreeDeeRender/settingsKeys";
 
 import { TopicEntities } from "./TopicEntities";
 import { PrimitivePool } from "./primitives/PrimitivePool";
@@ -36,7 +37,7 @@ import {
   normalizeVector3,
 } from "../normalizeMessages";
 import { LayerSettingsEntity } from "../settings";
-import { topicIsConvertibleToSchema } from "../topicIsConvertibleToSchema";
+import { convertibleSchemaForTopic } from "../topicIsConvertibleToSchema";
 import { makePose } from "../transforms";
 
 const SCENE_ENTITIES_DEFAULT_SETTINGS: LayerSettingsEntity = {
@@ -66,10 +67,11 @@ export class FoxgloveSceneEntities extends SceneExtension<TopicEntities> {
     const configTopics = this.renderer.config.topics;
     const entries: SettingsTreeEntry[] = [];
     for (const topic of this.renderer.topics ?? []) {
-      if (!topicIsConvertibleToSchema(topic, SCENE_UPDATE_DATATYPES)) {
+      const schema = convertibleSchemaForTopic(topic, SCENE_UPDATE_DATATYPES);
+      if (!schema) {
         continue;
       }
-      const settingsKey = this.settingsKeyForTopic(topic.name);
+      const settingsKey = settingsKeys.forTopic(topic.name, schema);
       const config = (configTopics[settingsKey] ?? {}) as Partial<LayerSettingsEntity>;
 
       const node: SettingsTreeNodeWithActionHandler = {

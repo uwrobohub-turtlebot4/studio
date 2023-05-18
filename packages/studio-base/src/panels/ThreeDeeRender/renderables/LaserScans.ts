@@ -26,6 +26,7 @@ import { SettingsTreeEntry, SettingsTreeNodeWithActionHandler } from "../Setting
 import { LASERSCAN_DATATYPES as FOXGLOVE_LASERSCAN_DATATYPES } from "../foxglove";
 import { normalizeFloat32Array, normalizeTime, normalizePose } from "../normalizeMessages";
 import { LASERSCAN_DATATYPES as ROS_LASERSCAN_DATATYPES, LaserScan as RosLaserScan } from "../ros";
+import { settingsKeys } from "../settingsKeys";
 import { topicIsConvertibleToSchema } from "../topicIsConvertibleToSchema";
 import { Pose } from "../transforms";
 
@@ -362,7 +363,8 @@ export class LaserScans extends SceneExtension<LaserScanRenderable> {
         : normalizeFoxgloveLaserScan(messageEvent.message as PartialMessage<FoxgloveLaserScan>);
     const receiveTime = toNanoSec(messageEvent.receiveTime);
 
-    let renderable = this.renderables.get(topic);
+    const settingsKey = settingsKeys.forMessage(messageEvent);
+    let renderable = this.renderables.get(settingsKey);
     if (!renderable) {
       // Set the initial settings from default values merged with any user settings
       const userSettings = this.renderer.config.topics[topic] as
@@ -380,7 +382,7 @@ export class LaserScans extends SceneExtension<LaserScanRenderable> {
           updatedUserSettings.colorField = settings.colorField;
           updatedUserSettings.colorMode = settings.colorMode;
           updatedUserSettings.colorMap = settings.colorMap;
-          draft.topics[topic] = updatedUserSettings;
+          draft.topics[settingsKey] = updatedUserSettings;
         });
       }
 

@@ -21,7 +21,8 @@ import {
 } from "../normalizeMessages";
 import { ColorRGBA, OCCUPANCY_GRID_DATATYPES, OccupancyGrid } from "../ros";
 import { BaseSettings } from "../settings";
-import { topicIsConvertibleToSchema } from "../topicIsConvertibleToSchema";
+import { settingsKeys } from "../settingsKeys";
+import { convertibleSchemaForTopic } from "../topicIsConvertibleToSchema";
 
 type ColorModes = "custom" | "costmap" | "map" | "raw";
 
@@ -97,11 +98,12 @@ export class OccupancyGrids extends SceneExtension<OccupancyGridRenderable> {
     const handler = this.handleSettingsAction;
     const entries: SettingsTreeEntry[] = [];
     for (const topic of this.renderer.topics ?? []) {
-      if (!topicIsConvertibleToSchema(topic, OCCUPANCY_GRID_DATATYPES)) {
+      const schema = convertibleSchemaForTopic(topic, OCCUPANCY_GRID_DATATYPES);
+      if (schema == undefined) {
         continue;
       }
 
-      const settingsKey = this.settingsKeyForTopic(topic.name);
+      const settingsKey = settingsKeys.forTopic(topic.name, schema);
 
       const configWithDefaults = { ...DEFAULT_SETTINGS, ...configTopics[topic.name] };
 
@@ -213,7 +215,7 @@ export class OccupancyGrids extends SceneExtension<OccupancyGridRenderable> {
     const occupancyGrid = normalizeOccupancyGrid(messageEvent.message);
     const receiveTime = toNanoSec(messageEvent.receiveTime);
 
-    const settingsKey = this.settingsKeyForTopic(topic);
+    const settingsKey = settingsKeys.forMessage(messageEvent);
 
     let renderable = this.renderables.get(settingsKey);
     if (!renderable) {
