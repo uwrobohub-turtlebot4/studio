@@ -3,17 +3,22 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Immutable } from "immer";
+import { transform } from "lodash";
 import { DeepPartial, DeepWritable } from "ts-essentials";
 
+import { Topic } from "@foxglove/studio";
 import { FollowMode, ImageModeConfig } from "@foxglove/studio-base/panels/ThreeDeeRender/IRenderer";
 import { MeshUpAxis } from "@foxglove/studio-base/panels/ThreeDeeRender/ModelCache";
 import { CameraState } from "@foxglove/studio-base/panels/ThreeDeeRender/camera";
+import { ALL_FOXGLOVE_DATATYPES } from "@foxglove/studio-base/panels/ThreeDeeRender/foxglove";
 import { LayerSettingsTransform } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/FrameAxes";
 import { PublishClickType } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/PublishClickTool";
+import { ALL_ROS_DATATYPES } from "@foxglove/studio-base/panels/ThreeDeeRender/ros";
 import {
   BaseSettings,
   CustomLayerSettings,
 } from "@foxglove/studio-base/panels/ThreeDeeRender/settings";
+import { settingsKeys } from "@foxglove/studio-base/panels/ThreeDeeRender/settingsKeys";
 
 export type RendererConfigV1 = {
   /** Camera settings for the currently rendering scene */
@@ -125,12 +130,39 @@ function sclone<T>(val: T): DeepWritable<T> {
 //   return settingsTopicKey(topic.name, topic.convertibleTo?.[converterOrder] ?? topic.schemaName);
 // }
 
+const ALL_SUPPORTED_SCHEMAS = new Set([...ALL_ROS_DATATYPES, ...ALL_FOXGLOVE_DATATYPES]);
+
 export function migrateConfig(
   oldConfig: Immutable<DeepPartial<RendererConfigV1 | RendererConfigV2>>,
+  topics: Immutable<Topic[]>,
 ): DeepPartial<RendererConfig> {
   if ("version" in oldConfig) {
     return sclone(oldConfig);
   }
 
-  return { ...sclone(oldConfig), version: "2" };
+  const mappedTopics = transform(
+    oldConfig.topics ?? {},
+    (acc, value, key) => {
+      const topic = topics.find((top) => top.name === key);
+      if (topic) {
+        const convertibleSchema = topic.convertibleTo?.find((schema) =>
+          ALL_SUPPORTED_SCHEMAS.has(schema),
+        );
+        if (topic.schemaName && ALL_SUPPORTED_SCHEMAS.has(topic.schemaName)) {
+          const mappedKey = settingsKeys.forTopic(topic.name, topic.schemaName);
+          acc[mappedKey] = value;
+        } else if (convertibleSchema) {
+          const mappedKey = settingsKeys.forTopic(topic.name, convertibleSchema);
+          acc[mappedKey] = value;
+        } else {
+          acc[key] = value;
+        }
+      } else {
+        acc[key] = value;
+      }
+    },
+    {} as RendererConfigV2["topics"],
+  );
+
+  return { ...sclone(oldConfig), version: "2", topics: mappedTopics };
 }

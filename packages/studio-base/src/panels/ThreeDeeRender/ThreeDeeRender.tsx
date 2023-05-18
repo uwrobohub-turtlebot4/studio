@@ -105,7 +105,7 @@ export function ThreeDeeRender(props: {
   const [config, setConfig] = useState<Immutable<RendererConfig>>(() => {
     const partialConfig =
       initialState != undefined
-        ? migrateConfig(initialState as DeepPartial<AnyRendererConfig>)
+        ? migrateConfig(initialState as DeepPartial<AnyRendererConfig>, [])
         : {};
 
     // Initialize the camera from default settings overlaid with persisted settings
