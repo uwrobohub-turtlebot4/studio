@@ -27,7 +27,7 @@ function useHoverOnPanel(andThen?: () => void) {
 
   const callback = useRef(andThen); // should not change
   return () => {
-    const container = document.querySelector("[data-testid~='panel-mouseenter-container']");
+    const container = document.querySelector("[data-testid='panel-mouseenter-container']");
     if (!container) {
       throw new Error("missing mouseenter container");
     }
