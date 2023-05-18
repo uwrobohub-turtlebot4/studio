@@ -38,7 +38,7 @@ import {
   TIME_ZERO,
 } from "../ros";
 import { BaseSettings, PRECISION_DISTANCE } from "../settings";
-import { topicIsConvertibleToSchema } from "../topicIsConvertibleToSchema";
+import { convertibleSchemaForTopic } from "../topicIsConvertibleToSchema";
 import { makePose } from "../transforms";
 
 type DisplayType = "axis" | "arrow";
@@ -132,18 +132,18 @@ export class Poses extends SceneExtension<PoseRenderable> {
     const handler = this.handleSettingsAction;
     const entries: SettingsTreeEntry[] = [];
     for (const topic of this.renderer.topics ?? []) {
-      const isPoseStamped = topicIsConvertibleToSchema(topic, POSE_STAMPED_DATATYPES);
-      const isPoseInFrame = topicIsConvertibleToSchema(topic, POSE_IN_FRAME_DATATYPES);
-      const isPoseWithCovarianceStamped = isPoseStamped
-        ? false
-        : topicIsConvertibleToSchema(topic, POSE_WITH_COVARIANCE_STAMPED_DATATYPES);
-      if (!(isPoseStamped || isPoseWithCovarianceStamped || isPoseInFrame)) {
+      const poseStampedSchema = convertibleSchemaForTopic(topic, POSE_STAMPED_DATATYPES);
+      const poseInFrameSchema = convertibleSchemaForTopic(topic, POSE_IN_FRAME_DATATYPES);
+      const poseWithCovarianceStampedSchema = poseStampedSchema
+        ? undefined
+        : convertibleSchemaForTopic(topic, POSE_WITH_COVARIANCE_STAMPED_DATATYPES);
+
+      const schema = poseStampedSchema ?? poseInFrameSchema ?? poseWithCovarianceStampedSchema;
+      if (schema == undefined) {
         continue;
       }
 
-      const settingsKey = this.settingsKeyForTopic(topic.name);
-
-      const config = (configTopics[settingsKey] ?? {}) as Partial<LayerSettingsPose>;
+      const config = (configTopics[topic.name]?.[schema] ?? {}) as Partial<LayerSettingsPose>;
       const type = config.type ?? DEFAULT_TYPE;
 
       const fields: SettingsTreeFields = {
@@ -174,7 +174,7 @@ export class Poses extends SceneExtension<PoseRenderable> {
         };
       }
 
-      if (isPoseWithCovarianceStamped) {
+      if (schema === poseWithCovarianceStampedSchema) {
         const showCovariance = config.showCovariance ?? DEFAULT_SHOW_COVARIANCE;
         const covarianceColor = config.covarianceColor ?? DEFAULT_COVARIANCE_COLOR_STR;
 
@@ -193,7 +193,7 @@ export class Poses extends SceneExtension<PoseRenderable> {
       }
 
       entries.push({
-        path: ["topics", settingsKey],
+        path: ["topics", `Poses_${entries.length}`],
         node: {
           label: topic.name,
           icon: "Flag",

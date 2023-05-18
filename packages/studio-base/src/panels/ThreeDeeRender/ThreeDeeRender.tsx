@@ -32,7 +32,6 @@ import type {
   FollowMode,
   IRenderer,
   ImageModeConfig,
-  RendererConfig,
   RendererEvents,
   RendererSubscription,
 } from "./IRenderer";
@@ -42,6 +41,7 @@ import { LegacyImageConfig, Renderer } from "./Renderer";
 import { RendererContext, useRendererEvent } from "./RendererContext";
 import { RendererOverlay } from "./RendererOverlay";
 import { CameraState, DEFAULT_CAMERA_STATE } from "./camera";
+import { AnyRendererConfig, RendererConfig, migrateConfig } from "./config";
 import {
   PublishRos1Datatypes,
   PublishRos2Datatypes,
@@ -103,16 +103,19 @@ export function ThreeDeeRender(props: {
 
   // Load and save the persisted panel configuration
   const [config, setConfig] = useState<Immutable<RendererConfig>>(() => {
-    const partialConfig = initialState as DeepPartial<RendererConfig> | undefined;
+    const partialConfig =
+      initialState != undefined
+        ? migrateConfig(initialState as DeepPartial<AnyRendererConfig>)
+        : {};
 
     // Initialize the camera from default settings overlaid with persisted settings
     const cameraState: CameraState = merge(
       cloneDeep(DEFAULT_CAMERA_STATE),
-      partialConfig?.cameraState,
+      partialConfig.cameraState,
     );
-    const publish = merge(cloneDeep(DEFAULT_PUBLISH_SETTINGS), partialConfig?.publish);
+    const publish = merge(cloneDeep(DEFAULT_PUBLISH_SETTINGS), partialConfig.publish);
 
-    const transforms = (partialConfig?.transforms ?? {}) as Record<
+    const transforms = (partialConfig.transforms ?? {}) as Record<
       string,
       Partial<LayerSettingsTransform>
     >;
@@ -121,23 +124,25 @@ export function ThreeDeeRender(props: {
     const legacyImageConfig = partialConfig as DeepPartial<LegacyImageConfig> | undefined;
     const imageMode: ImageModeConfig = {
       imageTopic: legacyImageConfig?.cameraTopic,
-      ...partialConfig?.imageMode,
-      annotations: partialConfig?.imageMode?.annotations as
+      ...partialConfig.imageMode,
+      annotations: partialConfig.imageMode?.annotations as
         | ImageModeConfig["annotations"]
         | undefined,
     };
 
-    return {
+    const completeConfig: RendererConfig = {
       cameraState,
-      followMode: partialConfig?.followMode ?? "follow-pose",
-      followTf: partialConfig?.followTf,
-      scene: partialConfig?.scene ?? {},
-      transforms,
-      topics: partialConfig?.topics ?? {},
-      layers: partialConfig?.layers ?? {},
-      publish,
+      followMode: partialConfig.followMode ?? "follow-pose",
+      followTf: partialConfig.followTf,
       imageMode,
+      layers: partialConfig.layers ?? {},
+      publish,
+      scene: partialConfig.scene ?? {},
+      topics: partialConfig.topics ?? {},
+      transforms,
     };
+
+    return completeConfig;
   });
   const configRef = useLatest(config);
   const { cameraState } = config;
@@ -390,7 +395,7 @@ export function ThreeDeeRender(props: {
         rendererSubscription.shouldSubscribe?.(topic.name) ??
         rendererSubscription.shouldSubscribe?.(settingsTopicKey(topic.name, convertTo));
       if (shouldSubscribe == undefined) {
-        if (config.topics[topic.name]?.visible === true) {
+        if (config.topics[topic.name]?.[convertTo ?? topic.schemaName]?.visible === true) {
           shouldSubscribe = true;
         } else if (
           config.imageMode.annotations?.some(

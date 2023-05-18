@@ -17,3 +17,14 @@ export function topicIsConvertibleToSchema(
     (topic.convertibleTo?.some((name) => supportedSchemaNames.has(name)) ?? false)
   );
 }
+
+export function convertibleSchemaForTopic(
+  topic: Topic,
+  supportedSchemaNames: Set<string>,
+): undefined | string {
+  if (supportedSchemaNames.has(topic.schemaName)) {
+    return topic.schemaName;
+  }
+
+  return topic.convertibleTo?.find((name) => supportedSchemaNames.has(name));
+}

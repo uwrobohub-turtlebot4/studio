@@ -32,7 +32,6 @@ import {
   IRenderer,
   InstancedLineMaterial,
   MessageHandler,
-  RendererConfig,
   RendererEvents,
   RendererSubscription,
 } from "./IRenderer";
@@ -47,6 +46,7 @@ import { SettingsManager, SettingsTreeEntry } from "./SettingsManager";
 import { SharedGeometry } from "./SharedGeometry";
 import { CameraState } from "./camera";
 import { DARK_OUTLINE, LIGHT_OUTLINE, stringToRgb } from "./color";
+import { RendererConfig } from "./config";
 import { FRAME_TRANSFORMS_DATATYPES, FRAME_TRANSFORM_DATATYPES } from "./foxglove";
 import { DetailLevel, msaaSamples } from "./lod";
 import {
