@@ -236,25 +236,22 @@ function initRenderStateBuilder(): BuildRenderStateFn {
             continue;
           }
 
-          // Given that messagesByTopic should be in order by receiveTime
-          // We need to combine all of the messages into a single array and sorted by receive time
+          // Given that messagesByTopic should be in order by receiveTime, we need to
+          // combine all of the messages into a single array and sorted by receive time.
           forEachSortedArrays(
             topicsToPreloadForPanel.map((topic) => block.messagesByTopic[topic] ?? []),
             (a, b) => compare(a.receiveTime, b.receiveTime),
             (messageEvent) => {
               // Message blocks may contain topics that we are not subscribed to so we
               // need to filter those out. We use unconvertedSubscriptionTopics to
-              // determine if we should include the message event.
-              //
-              // Unconverted messages should only be included if we have new blocks.
-              if (newBlocks && unconvertedSubscriptionTopics.has(messageEvent.topic)) {
+              // determine if we should include the message event. Clients expect
+              // allFrames to be a complete set of messages for all subscribed topics so
+              // we include all unconverted and converted messages, unlike in
+              // currentFrame.
+              if (unconvertedSubscriptionTopics.has(messageEvent.topic)) {
                 frames.push(messageEvent);
               }
-
-              // Run all converters if we have new blocks and only new ones if we're
-              // reprocessing the previous block to handle new conversions.
-              const converters = newBlocks ? topicSchemaConverters : newConverters;
-              convertMessage(messageEvent, converters, frames);
+              convertMessage(messageEvent, topicSchemaConverters, frames);
             },
           );
         }

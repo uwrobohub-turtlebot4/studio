@@ -936,6 +936,7 @@ describe("renderState", () => {
       topics: expectedState1.topics,
       currentFrame: expect.any(Array),
       allFrames: [
+        ...expectedState1.allFrames,
         {
           message: 2,
           originalMessageEvent: {
