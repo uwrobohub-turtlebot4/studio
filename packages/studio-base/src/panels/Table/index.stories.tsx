@@ -144,8 +144,8 @@ export const ExpandNestedCells: StoryObj = {
     const [targetRow] = await canvas.findAllByTestId("expand-row-0");
     fireEvent.click(targetRow!);
 
-    const [targetCell] = await canvas.findAllByTestId("expand-cell-arr-obj-0");
-    fireEvent.click(targetCell!);
+    const nestedRows = await canvas.findAllByTestId("expand-row-0");
+    fireEvent.click(nestedRows[2]!);
   },
 };
 
