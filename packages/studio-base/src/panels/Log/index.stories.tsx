@@ -12,9 +12,8 @@
 //   You may not use this file except in compliance with the License.
 
 import { StoryObj } from "@storybook/react";
-import { screen, userEvent } from "@storybook/testing-library";
+import { userEvent, within } from "@storybook/testing-library";
 import { range } from "lodash";
-import TestUtils from "react-dom/test-utils";
 
 import Log from "@foxglove/studio-base/panels/Log";
 import PanelSetup, { Fixture } from "@foxglove/studio-base/stories/PanelSetup";
@@ -164,46 +163,6 @@ export const WithSettings: StoryObj = {
   },
 };
 
-export const TopicToRender: StoryObj = {
-  render: function Story() {
-    function makeMessages(topic: any) {
-      return fixture.frame!["/rosout"]!.map((msg: any) => ({
-        ...msg,
-        topic,
-        message: { ...msg.message, name: `${topic}${msg.message.name}` },
-      }));
-    }
-    return (
-      <PanelSetup
-        fixture={{
-          topics: [
-            { name: "/rosout", schemaName: "rosgraph_msgs/Log" },
-            { name: "/foo/rosout", schemaName: "rosgraph_msgs/Log" },
-            { name: "/studio_source_2/rosout", schemaName: "rosgraph_msgs/Log" },
-          ],
-          frame: {
-            "/rosout": makeMessages("/rosout"),
-            "/foo/rosout": makeMessages("/foo/rosout"),
-            "/studio_source_2/rosout": makeMessages("/studio_source_2/rosout"),
-          },
-        }}
-        onMount={() => {
-          TestUtils.Simulate.mouseEnter(
-            document.querySelectorAll("[data-testid~=panel-mouseenter-container]")[0]!,
-          );
-          setTimeout(() => {
-            TestUtils.Simulate.click(document.querySelectorAll("[data-testid=topic-set]")[0]!);
-          }, 0);
-        }}
-      >
-        <Log overrideConfig={{ searchTerms: [], minLogLevel: 1, topicToRender: "/foo/rosout" }} />
-      </PanelSetup>
-    );
-  },
-
-  parameters: { colorScheme: "dark" },
-};
-
 export const FilteredTerms: StoryObj = {
   render: function Story() {
     return (
@@ -254,9 +213,9 @@ export const AutoCompleteItems: StoryObj = {
       </PanelSetup>
     );
   },
-
-  play: async () => {
-    const input = (await screen.findAllByPlaceholderText("Search filter"))[0]!;
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = (await canvas.findAllByPlaceholderText("Search filter"))[0]!;
     userEvent.click(input);
   },
 };
