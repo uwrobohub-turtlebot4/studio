@@ -100,7 +100,7 @@ export default {
   ],
 };
 
-export const Default: StoryObj = {
+export const List: StoryObj = {
   ...PanelListStory,
   name: "Panel list",
 };
@@ -184,11 +184,11 @@ export const PanelListJapanese: StoryObj = {
 };
 
 export const NoResultsChinese: StoryObj = {
-  ...PanelListStory,
+  ...NoResultsAnyList,
   parameters: { forceLanguage: "zh" },
 };
 
 export const NoResultsJapanese: StoryObj = {
-  ...PanelListStory,
+  ...NoResultsAnyList,
   parameters: { forceLanguage: "ja" },
 };
