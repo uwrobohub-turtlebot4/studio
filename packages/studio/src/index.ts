@@ -412,7 +412,7 @@ export type RegisterMessageConverterArgs<Src> = {
 
 export type RegisterTopicMapperArgs = (
   topics: ReadonlyArray<{ name: string; schemaName?: string }>,
-) => ReadonlyMap<string, string>;
+) => ReadonlyMap<string, string[]>;
 
 export interface ExtensionContext {
   /** The current _mode_ of the application. */

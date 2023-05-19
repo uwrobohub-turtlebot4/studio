@@ -3,101 +3,45 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Immutable as Im } from "immer";
-import { transform } from "lodash";
 
 import { Time } from "@foxglove/rostime";
-import { MessageEvent, ParameterValue } from "@foxglove/studio";
+import { ParameterValue } from "@foxglove/studio";
 import { GlobalVariables } from "@foxglove/studio-base/hooks/useGlobalVariables";
 import {
   AdvertiseOptions,
-  MessageBlock,
   Player,
   PlayerState,
   PublishPayload,
   SubscribePayload,
-  Topic,
 } from "@foxglove/studio-base/players/types";
 
-type TopicMapping = Map<string, string>;
-type MessageBlocks = readonly (undefined | MessageBlock)[];
-
-function mapBlocks(blocks: MessageBlocks, mappings: TopicMapping): MessageBlocks {
-  return blocks.map((block) => {
-    return block
-      ? {
-          ...block,
-          messagesByTopic: transform(
-            block.messagesByTopic,
-            (acc, value, key) => {
-              const mappedTopic = mappings.get(key) ?? key;
-              acc[mappedTopic] = mapMessages(value, mappings);
-            },
-            {} as Record<string, MessageEvent<unknown>[]>,
-          ),
-        }
-      : undefined;
-  });
-}
-
-function mapMessages(
-  messages: readonly MessageEvent<unknown>[],
-  mappings: TopicMapping,
-): MessageEvent<unknown>[] {
-  return messages.map((msg) => {
-    return {
-      ...msg,
-      topic: mappings.get(msg.topic) ?? msg.topic,
-    };
-  });
-}
-
-function mapPublishedTopics(
-  topics: Map<string, Set<string>>,
-  mappings: TopicMapping,
-): Map<string, Set<string>> {
-  return new Map([...topics].map(([key, value]) => [mappings.get(key) ?? key, value]));
-}
-
-function mapSubscribedTopics(
-  topics: Map<string, Set<string>>,
-  mappings: TopicMapping,
-): Map<string, Set<string>> {
-  return new Map([...topics].map(([key, value]) => [mappings.get(key) ?? key, value]));
-}
-
-function mapTopics(topics: Topic[], mappings: TopicMapping): Topic[] {
-  return topics.map((topic) => {
-    return {
-      ...topic,
-      name: mappings.get(topic.name) ?? topic.name,
-    };
-  });
-}
-
-function mapSubscriptions(
-  subcriptions: SubscribePayload[],
-  mappings: TopicMapping,
-): SubscribePayload[] {
-  return subcriptions.map((sub) => {
-    return {
-      ...sub,
-      topic: mappings.get(sub.topic) ?? sub.topic,
-    };
-  });
-}
+import {
+  EmptyMapping,
+  TopicMapping,
+  invertMapping,
+  mapBlocks,
+  mapMessages,
+  mapKeyedTopics,
+  mapSubscriptions,
+  mapTopics,
+  mergeMappings,
+} from "./mapping";
 
 export class TopicMappingPlayer implements Player {
-  #listener?: (arg0: PlayerState) => Promise<void>;
   readonly #player: Player;
-  readonly #inverseMappings: Map<string, string>;
-  readonly #mappings: Map<string, string>;
+  readonly #inverseMapping: Im<TopicMapping>;
+  readonly #mapping: Im<TopicMapping>;
 
-  public constructor(player: Player, mappings: Im<Map<string, string>[]>) {
+  #listener?: (arg0: PlayerState) => Promise<void>;
+
+  public constructor(player: Player, mappings: Im<TopicMapping[]>) {
     this.#player = player;
 
+    const anyMappings = mappings.some((map) => [...map.entries()].length > 0);
+
     // Combine mappings into one map and build the inverse map.
-    this.#mappings = mappings.reduce((acc, value) => new Map(...acc, ...value), new Map());
-    this.#inverseMappings = new Map(Array.from(this.#mappings, (entry) => [entry[1], entry[0]]));
+    this.#mapping = anyMappings ? mergeMappings(mappings) : EmptyMapping;
+    this.#inverseMapping = anyMappings ? invertMapping(this.#mapping) : EmptyMapping;
   }
 
   public setListener(listener: (playerState: PlayerState) => Promise<void>): void {
@@ -111,7 +55,7 @@ export class TopicMappingPlayer implements Player {
   }
 
   public setSubscriptions(subscriptions: SubscribePayload[]): void {
-    const mappedSubscriptions = mapSubscriptions(subscriptions, this.#inverseMappings);
+    const mappedSubscriptions = mapSubscriptions(subscriptions, this.#inverseMapping);
     this.#player.setSubscriptions(mappedSubscriptions);
   }
 
@@ -156,21 +100,26 @@ export class TopicMappingPlayer implements Player {
   }
 
   async #onPlayerState(playerState: PlayerState) {
+    if (this.#mapping === EmptyMapping) {
+      await this.#listener?.(playerState);
+      return;
+    }
+
     const newState = { ...playerState };
 
     if (newState.activeData) {
-      newState.activeData.topics = mapTopics(newState.activeData.topics, this.#mappings);
-      newState.activeData.messages = mapMessages(newState.activeData.messages, this.#mappings);
+      newState.activeData.topics = mapTopics(newState.activeData.topics, this.#mapping);
+      newState.activeData.messages = mapMessages(newState.activeData.messages, this.#mapping);
       if (newState.activeData.publishedTopics) {
-        newState.activeData.publishedTopics = mapPublishedTopics(
+        newState.activeData.publishedTopics = mapKeyedTopics(
           newState.activeData.publishedTopics,
-          this.#mappings,
+          this.#mapping,
         );
       }
       if (newState.activeData.subscribedTopics) {
-        newState.activeData.subscribedTopics = mapSubscribedTopics(
+        newState.activeData.subscribedTopics = mapKeyedTopics(
           newState.activeData.subscribedTopics,
-          this.#mappings,
+          this.#mapping,
         );
       }
     }
@@ -178,7 +127,7 @@ export class TopicMappingPlayer implements Player {
     if (newState.progress.messageCache?.blocks) {
       newState.progress.messageCache.blocks = mapBlocks(
         newState.progress.messageCache.blocks,
-        this.#mappings,
+        this.#mapping,
       );
     }
 
