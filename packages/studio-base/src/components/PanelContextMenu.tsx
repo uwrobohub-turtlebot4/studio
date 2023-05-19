@@ -32,8 +32,8 @@ export type PanelContextMenuItem =
     };
 
 type PanelContextMenuProps = {
-  /** List of menu items */
-  items: DeepReadonly<PanelContextMenuItem[]>;
+  /** @returns List of menu items */
+  getItems: () => DeepReadonly<PanelContextMenuItem[]>;
 };
 
 /**
@@ -41,7 +41,7 @@ type PanelContextMenuProps = {
  * must be a child of a Panel component to work.
  */
 export function PanelContextMenu(props: PanelContextMenuProps): JSX.Element {
-  const { items } = props;
+  const { getItems } = props;
 
   const rootRef = useRef<HTMLDivElement>(ReactNull);
 
@@ -49,11 +49,17 @@ export function PanelContextMenu(props: PanelContextMenuProps): JSX.Element {
 
   const handleClose = useCallback(() => setPosition(undefined), []);
 
-  const listener = useCallback((event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setPosition({ x: event.clientX, y: event.clientY });
-  }, []);
+  const [items, setItems] = useState<DeepReadonly<PanelContextMenuItem[]>>([]);
+
+  const listener = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setPosition({ x: event.clientX, y: event.clientY });
+      setItems(getItems());
+    },
+    [getItems],
+  );
 
   useEffect(() => {
     const element = rootRef.current;

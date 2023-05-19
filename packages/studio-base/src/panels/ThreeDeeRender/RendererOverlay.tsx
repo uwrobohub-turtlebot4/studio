@@ -344,14 +344,21 @@ export function RendererOverlay(props: {
     }
   }, [renderer, onDownloadImage, enqueueSnackbar]);
 
-  const contextMenuItems = useMemo<PanelContextMenuItem[]>(
-    () => [{ type: "item", label: "Download image", onclick: doDownloadImage }],
-    [doDownloadImage],
+  const getContextMenuItems = useCallback(
+    (): PanelContextMenuItem[] => [
+      {
+        type: "item",
+        label: "Download image",
+        onclick: doDownloadImage,
+        disabled: renderer?.getCurrentImage() == undefined,
+      },
+    ],
+    [doDownloadImage, renderer],
   );
 
   return (
     <>
-      <PanelContextMenu items={contextMenuItems} />
+      <PanelContextMenu getItems={getContextMenuItems} />
       <div
         style={{
           position: "absolute",
