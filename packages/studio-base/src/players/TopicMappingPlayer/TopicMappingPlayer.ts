@@ -3,6 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Immutable as Im } from "immer";
+import memoizeWeak from "memoize-weak";
 
 import { Time } from "@foxglove/rostime";
 import { ParameterValue, RegisterTopicMapperArgs } from "@foxglove/studio";
@@ -27,6 +28,10 @@ import {
   mapTopics,
   mergeMappings,
 } from "./mapping";
+
+const memoMapTopics = memoizeWeak(mapTopics);
+const memoMapKeyedTopics = memoizeWeak(mapKeyedTopics);
+const memoMapBlocks = memoizeWeak(mapBlocks);
 
 export class TopicMappingPlayer implements Player {
   readonly #player: Player;
@@ -121,16 +126,16 @@ export class TopicMappingPlayer implements Player {
     const newState = { ...playerState };
 
     if (newState.activeData) {
-      newState.activeData.topics = mapTopics(newState.activeData.topics, this.#mapping);
+      newState.activeData.topics = memoMapTopics(newState.activeData.topics, this.#mapping);
       newState.activeData.messages = mapMessages(newState.activeData.messages, this.#mapping);
       if (newState.activeData.publishedTopics) {
-        newState.activeData.publishedTopics = mapKeyedTopics(
+        newState.activeData.publishedTopics = memoMapKeyedTopics(
           newState.activeData.publishedTopics,
           this.#mapping,
         );
       }
       if (newState.activeData.subscribedTopics) {
-        newState.activeData.subscribedTopics = mapKeyedTopics(
+        newState.activeData.subscribedTopics = memoMapKeyedTopics(
           newState.activeData.subscribedTopics,
           this.#mapping,
         );
@@ -138,10 +143,13 @@ export class TopicMappingPlayer implements Player {
     }
 
     if (newState.progress.messageCache?.blocks) {
-      newState.progress.messageCache.blocks = mapBlocks(
-        newState.progress.messageCache.blocks,
-        this.#mapping,
-      );
+      newState.progress = {
+        ...newState.progress,
+        messageCache: {
+          ...newState.progress.messageCache,
+          blocks: memoMapBlocks(newState.progress.messageCache.blocks, this.#mapping),
+        },
+      };
     }
 
     await this.#listener?.(newState);

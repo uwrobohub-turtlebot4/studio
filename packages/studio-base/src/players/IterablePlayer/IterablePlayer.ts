@@ -34,6 +34,7 @@ import {
   PlayerCapabilities,
   TopicStats,
   PlayerStateActiveData,
+  BlockCache,
 } from "@foxglove/studio-base/players/types";
 import { RosDatatypes } from "@foxglove/studio-base/types/RosDatatypes";
 import delay from "@foxglove/studio-base/util/delay";
@@ -1025,6 +1026,8 @@ export class IterablePlayer implements Player {
       this.#queueEmitState();
     }
   }
+
+  #lastBlocks: undefined | BlockCache = undefined;
 
   async #stateClose() {
     this.#isPlaying = false;
