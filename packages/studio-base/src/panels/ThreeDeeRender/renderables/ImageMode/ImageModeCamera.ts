@@ -13,7 +13,7 @@ const DEFAULT_CAMERA_STATE = {
 
 const MIN_USER_ZOOM = 0.5;
 const MAX_USER_ZOOM = 50;
-export const DEFAULT_ZOOM_MODE = "fit";
+export const DEFAULT_ZOOM_MODE = "fit" as const;
 
 export class ImageModeCamera extends THREE.PerspectiveCamera {
   #model?: PinholeCameraModel;

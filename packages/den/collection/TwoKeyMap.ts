@@ -21,6 +21,11 @@ export class TwoKeyMap<K1, K2, V> {
     map2.set(key2, value);
   }
 
+  /** Deletes upper level map with corresponding key */
+  public deleteMap(key1: K1): void {
+    this.#map.delete(key1);
+  }
+
   public delete(key1: K1, key2: K2): void {
     const map2 = this.#map.get(key1);
     if (map2 != undefined) {
@@ -39,6 +44,15 @@ export class TwoKeyMap<K1, K2, V> {
     this.#map.clear();
   }
 
+  /** Returns the number of secondary maps ie: the number of maps that contain values*/
+  public size(): number {
+    let size = 0;
+    for (const map2 of this.#map.values()) {
+      size += map2.size;
+    }
+    return size;
+  }
+
   /**
    * Iterate over all values. This may not be in the original insertion order, since keys may have
    * been added to the two levels of maps in different orders.
@@ -46,6 +60,17 @@ export class TwoKeyMap<K1, K2, V> {
   public *values(): Iterable<V> {
     for (const map2 of this.#map.values()) {
       yield* map2.values();
+    }
+  }
+
+  /**
+   * Iterates over all [key1, key2], value pairs. This may not be in the original insertion order.
+   */
+  public *entries(): Iterable<[[K1, K2], V]> {
+    for (const [key1, map2] of this.#map.entries()) {
+      for (const [key2, v] of map2.entries()) {
+        yield [[key1, key2], v];
+      }
     }
   }
 }

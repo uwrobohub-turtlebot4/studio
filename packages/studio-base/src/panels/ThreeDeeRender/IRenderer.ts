@@ -76,6 +76,7 @@ export type ImageModeConfig = {
   annotations?: ImageAnnotationSubscription[];
   /** Zoom mode */
   zoomMode?: "fit" | "fill";
+  synchronize?: boolean;
 };
 
 export type RendererConfig = {

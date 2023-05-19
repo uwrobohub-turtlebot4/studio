@@ -7,7 +7,6 @@ import * as THREE from "three";
 import { filterMap } from "@foxglove/den/collection";
 import { PinholeCameraModel } from "@foxglove/den/image";
 import { toNanoSec } from "@foxglove/rostime";
-import { CameraCalibration, CompressedImage, RawImage } from "@foxglove/schemas";
 import { SettingsTreeAction, SettingsTreeFields, Topic } from "@foxglove/studio";
 import {
   CREATE_BITMAP_ERR_KEY,
@@ -16,20 +15,15 @@ import {
 } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/Images/ImageRenderable";
 import { AnyImage } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/Images/ImageTypes";
 import {
-  normalizeCompressedImage,
-  normalizeRawImage,
-  normalizeRosCompressedImage,
-  normalizeRosImage,
-} from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/Images/imageNormalizers";
-import {
   cameraInfosEqual,
   normalizeCameraInfo,
 } from "@foxglove/studio-base/panels/ThreeDeeRender/renderables/projections";
 import { makePose } from "@foxglove/studio-base/panels/ThreeDeeRender/transforms";
 
 import { DEFAULT_ZOOM_MODE, ImageModeCamera } from "./ImageModeCamera";
+import { MessageState, ImageRenderState } from "./MessageState";
 import { ImageAnnotations } from "./annotations/ImageAnnotations";
-import type { IRenderer } from "../../IRenderer";
+import type { IRenderer, ImageModeConfig } from "../../IRenderer";
 import { PartialMessageEvent, SceneExtension } from "../../SceneExtension";
 import { SettingsTreeEntry } from "../../SettingsManager";
 import {
@@ -41,8 +35,6 @@ import {
   IMAGE_DATATYPES as ROS_IMAGE_DATATYPES,
   COMPRESSED_IMAGE_DATATYPES as ROS_COMPRESSED_IMAGE_DATATYPES,
   CAMERA_INFO_DATATYPES,
-  CompressedImage as RosCompressedImage,
-  Image as RosImage,
   CameraInfo,
 } from "../../ros";
 import { topicIsConvertibleToSchema } from "../../topicIsConvertibleToSchema";
@@ -79,6 +71,16 @@ const ALL_SUPPORTED_CALIBRATION_SCHEMAS = new Set([
   ...CAMERA_CALIBRATION_DATATYPES,
 ]);
 
+type ConfigWithDefaults = ImageModeConfig & {
+  synchronize: boolean;
+  zoomMode: NonNullable<ImageModeConfig["zoomMode"]>;
+};
+
+const DEFAULT_CONFIG = {
+  synchronize: true,
+  zoomMode: DEFAULT_ZOOM_MODE,
+};
+
 export class ImageMode
   extends SceneExtension<ImageRenderable, ImageModeEvent>
   implements ICameraHandler
@@ -94,6 +96,8 @@ export class ImageMode
   #annotations: ImageAnnotations;
 
   #imageRenderable: ImageRenderable | undefined;
+
+  #messageState: MessageState;
 
   #dragStartPanOffset = new THREE.Vector2();
   #dragStartMouseCoords = new THREE.Vector2();
@@ -132,6 +136,15 @@ export class ImageMode
     this.#camera.setCanvasSize(canvasSize.width, canvasSize.height);
     this.#camera.setZoomMode(renderer.config.imageMode.zoomMode ?? "fit");
 
+    const config = this.#getImageModeSettings();
+    this.#messageState = new MessageState({
+      calibrationTopic: config.calibrationTopic,
+      imageTopic: config.imageTopic,
+      synchronize: config.synchronize,
+      annotationSubscriptions: config.annotations ?? [],
+    });
+    this.#messageState.addStateUpdateListener(this.#updateFromMessageState);
+
     renderer.settings.errors.on("update", this.#handleErrorChange);
     renderer.settings.errors.on("clear", this.#handleErrorChange);
     renderer.settings.errors.on("remove", this.#handleErrorChange);
@@ -152,6 +165,7 @@ export class ImageMode
         renderer.addSchemaSubscriptions(schemaNames, handler);
       },
       labelPool: renderer.labelPool,
+      messageState: this.#messageState,
     });
     this.add(this.#annotations);
 
@@ -202,25 +216,25 @@ export class ImageMode
   public override addSubscriptionsToRenderer(): void {
     const renderer = this.renderer;
     renderer.addSchemaSubscriptions(ALL_SUPPORTED_CALIBRATION_SCHEMAS, {
-      handler: this.#handleCameraInfo,
+      handler: this.#messageState.handleCameraInfo,
       shouldSubscribe: this.#cameraInfoShouldSubscribe,
     });
 
     renderer.addSchemaSubscriptions(ROS_IMAGE_DATATYPES, {
-      handler: this.#handleRosRawImage,
+      handler: this.#messageState.handleRosRawImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     renderer.addSchemaSubscriptions(ROS_COMPRESSED_IMAGE_DATATYPES, {
-      handler: this.#handleRosCompressedImage,
+      handler: this.#messageState.handleRosCompressedImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
 
     renderer.addSchemaSubscriptions(RAW_IMAGE_DATATYPES, {
-      handler: this.#handleRawImage,
+      handler: this.#messageState.handleRawImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     renderer.addSchemaSubscriptions(COMPRESSED_IMAGE_DATATYPES, {
-      handler: this.#handleCompressedImage,
+      handler: this.#messageState.handleCompressedImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     this.#annotations.addSubscriptions();
@@ -241,6 +255,7 @@ export class ImageMode
     this.#imageRenderable?.dispose();
     this.#imageRenderable?.removeFromParent();
     this.#imageRenderable = undefined;
+    this.#messageState.clear();
     this.#clearCameraModel();
     super.removeAllRenderables();
   }
@@ -288,10 +303,9 @@ export class ImageMode
   }
 
   public override settingsNodes(): SettingsTreeEntry[] {
-    const config = this.renderer.config;
     const handler = this.handleSettingsAction;
 
-    const { imageTopic, calibrationTopic } = config.imageMode;
+    const { imageTopic, calibrationTopic, synchronize, zoomMode } = this.#getImageModeSettings();
 
     const imageTopics = filterMap(this.renderer.topics ?? [], (topic) => {
       if (!topicIsConvertibleToSchema(topic, ALL_SUPPORTED_IMAGE_SCHEMAS)) {
@@ -356,7 +370,6 @@ export class ImageMode
 
     // Not yet implemented
     // const transformMarkers: boolean = false;
-    // const synchronize: boolean = false;
     // const smooth: boolean = false;
     // const flipHorizontal: boolean = false;
     // const flipVertical: boolean = false;
@@ -375,14 +388,14 @@ export class ImageMode
     fields.calibrationTopic = {
       label: "Calibration",
       input: "select",
-      value: config.imageMode.calibrationTopic,
+      value: calibrationTopic,
       options: calibrationTopics,
       error: calibrationTopicError,
     };
     fields.zoomMode = {
       label: "Zoom mode",
       input: "toggle",
-      value: config.imageMode.zoomMode ?? DEFAULT_ZOOM_MODE,
+      value: zoomMode,
       options: [
         { label: "Fit", value: "fit" },
         { label: "Fill", value: "fill" },
@@ -397,12 +410,11 @@ export class ImageMode
     //     ? "Markers are being transformed by Foxglove Studio based on the camera model. Click to turn it off."
     //     : `Markers can be transformed by Foxglove Studio based on the camera model. Click to turn it on.`,
     // };
-    // fields.TODO_synchronize = {
-    //   readonly: true,
-    //   input: "boolean",
-    //   label: "🚧 Synchronize timestamps",
-    //   value: synchronize,
-    // };
+    fields.synchronize = {
+      input: "boolean",
+      label: "Synchronize timestamps",
+      value: synchronize,
+    };
     // fields.TODO_smooth = {
     //   readonly: true,
     //   input: "boolean",
@@ -498,9 +510,17 @@ export class ImageMode
       }
 
       if (config.zoomMode !== prevImageModeConfig.zoomMode) {
-        this.#camera.setZoomMode(config.zoomMode ?? DEFAULT_ZOOM_MODE);
+        this.#camera.setZoomMode(config.zoomMode);
         this.resetViewModifications();
       }
+      if (config.synchronize !== prevImageModeConfig.synchronize) {
+        this.removeAllRenderables();
+      }
+      this.#messageState.setRenderConfig({
+        synchronize: config.synchronize,
+        imageTopic: config.imageTopic,
+        calibrationTopic: config.calibrationTopic,
+      });
 
       this.#updateViewAndRenderables();
     } else {
@@ -519,34 +539,27 @@ export class ImageMode
     return this.#getImageModeSettings().imageTopic === topic;
   };
 
-  /** Processes camera info messages and updates state */
-  #handleCameraInfo = (
-    messageEvent: PartialMessageEvent<CameraInfo> & PartialMessageEvent<CameraCalibration>,
+  #updateFromMessageState = (
+    newState: Partial<ImageRenderState>,
+    oldState: Partial<ImageRenderState> | undefined,
   ): void => {
+    if (newState.image != undefined && newState.image !== oldState?.image) {
+      this.#handleImageChange(newState.image, newState.image.message as AnyImage);
+    }
+    if (newState.cameraInfo != undefined && newState.cameraInfo !== oldState?.cameraInfo) {
+      this.#handleCameraInfoChange(newState.cameraInfo);
+    }
+  };
+
+  /** Processes camera info messages and updates state */
+  #handleCameraInfoChange = (cameraInfo: CameraInfo): void => {
     // Store the last camera info on each topic, when processing an image message we'll look up
     // the camera info by the info topic configured for the image
-    const cameraInfo = normalizeCameraInfo(messageEvent.message);
     this.#updateCameraModel(cameraInfo);
     this.#updateViewAndRenderables();
   };
 
-  #handleRosRawImage = (messageEvent: PartialMessageEvent<RosImage>): void => {
-    this.#handleImage(messageEvent, normalizeRosImage(messageEvent.message));
-  };
-
-  #handleRosCompressedImage = (messageEvent: PartialMessageEvent<RosCompressedImage>): void => {
-    this.#handleImage(messageEvent, normalizeRosCompressedImage(messageEvent.message));
-  };
-
-  #handleRawImage = (messageEvent: PartialMessageEvent<RawImage>): void => {
-    this.#handleImage(messageEvent, normalizeRawImage(messageEvent.message));
-  };
-
-  #handleCompressedImage = (messageEvent: PartialMessageEvent<CompressedImage>): void => {
-    this.#handleImage(messageEvent, normalizeCompressedImage(messageEvent.message));
-  };
-
-  #handleImage = (messageEvent: PartialMessageEvent<AnyImage>, image: AnyImage): void => {
+  #handleImageChange = (messageEvent: PartialMessageEvent<AnyImage>, image: AnyImage): void => {
     const topic = messageEvent.topic;
     const receiveTime = toNanoSec(messageEvent.receiveTime);
     const frameId = "header" in image ? image.header.frame_id : image.frame_id;
@@ -696,8 +709,11 @@ export class ImageMode
     return cameraInfoFrameId ?? imageFrameId;
   }
 
-  #getImageModeSettings() {
-    return this.renderer.config.imageMode;
+  #getImageModeSettings(): Readonly<ConfigWithDefaults> {
+    return {
+      ...DEFAULT_CONFIG,
+      ...(this.renderer.config.imageMode as ImageModeConfig),
+    };
   }
 
   /**
