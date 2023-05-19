@@ -184,11 +184,11 @@ export const PanelListJapanese: StoryObj = {
 };
 
 export const NoResultsChinese: StoryObj = {
-  ...NoResultsAnyList,
+  ...NoResultsAnyGrid,
   parameters: { forceLanguage: "zh" },
 };
 
 export const NoResultsJapanese: StoryObj = {
-  ...NoResultsAnyList,
+  ...NoResultsAnyGrid,
   parameters: { forceLanguage: "ja" },
 };
