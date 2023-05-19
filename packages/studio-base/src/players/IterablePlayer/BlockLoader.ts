@@ -117,7 +117,7 @@ export class BlockLoader {
       const block = this.#blocks[i];
       if (block) {
         let blockBytesRemoved = 0;
-        const newMessagesByTopic: Record<string, readonly MessageEvent<unknown>[]> = {
+        const newMessagesByTopic: Record<string, MessageEvent<unknown>[]> = {
           ...block.messagesByTopic,
         };
         const blockTopics = Object.keys(newMessagesByTopic);

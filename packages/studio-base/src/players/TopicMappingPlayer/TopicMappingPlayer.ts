@@ -5,7 +5,7 @@
 import { Immutable as Im } from "immer";
 
 import { Time } from "@foxglove/rostime";
-import { ParameterValue } from "@foxglove/studio";
+import { ParameterValue, RegisterTopicMapperArgs } from "@foxglove/studio";
 import { GlobalVariables } from "@foxglove/studio-base/hooks/useGlobalVariables";
 import {
   AdvertiseOptions,
@@ -13,6 +13,7 @@ import {
   PlayerState,
   PublishPayload,
   SubscribePayload,
+  Topic,
 } from "@foxglove/studio-base/players/types";
 
 import {
@@ -20,8 +21,8 @@ import {
   TopicMapping,
   invertMapping,
   mapBlocks,
-  mapMessages,
   mapKeyedTopics,
+  mapMessages,
   mapSubscriptions,
   mapTopics,
   mergeMappings,
@@ -29,19 +30,17 @@ import {
 
 export class TopicMappingPlayer implements Player {
   readonly #player: Player;
-  readonly #inverseMapping: Im<TopicMapping>;
-  readonly #mapping: Im<TopicMapping>;
+  readonly #mappers: readonly RegisterTopicMapperArgs[];
+
+  #inverseMappings: Im<TopicMapping> = EmptyMapping;
+  #mapping: Im<TopicMapping> = EmptyMapping;
+  #lastSeenTopics: undefined | Im<Topic[]> = undefined;
 
   #listener?: (arg0: PlayerState) => Promise<void>;
 
-  public constructor(player: Player, mappings: Im<TopicMapping[]>) {
+  public constructor(player: Player, mappers: readonly RegisterTopicMapperArgs[]) {
     this.#player = player;
-
-    const anyMappings = mappings.some((map) => [...map.entries()].length > 0);
-
-    // Combine mappings into one map and build the inverse map.
-    this.#mapping = anyMappings ? mergeMappings(mappings) : EmptyMapping;
-    this.#inverseMapping = anyMappings ? invertMapping(this.#mapping) : EmptyMapping;
+    this.#mappers = mappers;
   }
 
   public setListener(listener: (playerState: PlayerState) => Promise<void>): void {
@@ -55,7 +54,7 @@ export class TopicMappingPlayer implements Player {
   }
 
   public setSubscriptions(subscriptions: SubscribePayload[]): void {
-    const mappedSubscriptions = mapSubscriptions(subscriptions, this.#inverseMapping);
+    const mappedSubscriptions = mapSubscriptions(subscriptions, this.#inverseMappings);
     this.#player.setSubscriptions(mappedSubscriptions);
   }
 
@@ -99,7 +98,21 @@ export class TopicMappingPlayer implements Player {
     this.#player.setGlobalVariables(globalVariables);
   }
 
+  #rebuildMappings(topics: Im<Topic[]>) {
+    const mappings = this.#mappers.map((mapper) => mapper(topics));
+    const anyMappings = mappings.some((map) => [...map.entries()].length > 0);
+
+    // Combine mappings into one map and build the inverse map.
+    this.#mapping = anyMappings ? mergeMappings(mappings) : EmptyMapping;
+    this.#inverseMappings = anyMappings ? invertMapping(this.#mapping) : EmptyMapping;
+  }
+
   async #onPlayerState(playerState: PlayerState) {
+    if (this.#lastSeenTopics !== playerState.activeData?.topics) {
+      this.#rebuildMappings(playerState.activeData?.topics ?? []);
+      this.#lastSeenTopics = playerState.activeData?.topics;
+    }
+
     if (this.#mapping === EmptyMapping) {
       await this.#listener?.(playerState);
       return;

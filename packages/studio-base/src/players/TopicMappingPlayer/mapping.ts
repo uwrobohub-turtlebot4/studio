@@ -24,7 +24,17 @@ export function mapBlocks(blocks: MessageBlocks, mapping: Im<TopicMapping>): Mes
           messagesByTopic: transform(
             block.messagesByTopic,
             (acc, messages, topic) => {
-              acc[topic] = [...mapMessages(messages, mapping)];
+              const mappings = mapping.get(topic);
+              if (mappings) {
+                for (const mappedTopic of mappings) {
+                  acc[mappedTopic] = messages.map((msg) => ({
+                    ...msg,
+                    topic: mappedTopic,
+                  }));
+                }
+              } else {
+                acc[topic] = messages;
+              }
             },
             {} as Record<string, MessageEvent<unknown>[]>,
           ),

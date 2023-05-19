@@ -17,10 +17,10 @@ import { useLatest, useMountedState } from "react-use";
 
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
+import { RegisterTopicMapperArgs } from "@foxglove/studio";
 import {
   MessagePipelineContext,
   MessagePipelineProvider,
-  useMessagePipeline,
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
 import {
@@ -64,7 +64,6 @@ const globalVariablesSelector = (state: LayoutState) =>
   state.selectedLayout?.data?.globalVariables ?? EMPTY_GLOBAL_VARIABLES;
 
 const selectTopicMappers = (catalog: ExtensionCatalog) => catalog.installedTopicMappers;
-const selecteSortedTopics = (context: MessagePipelineContext) => context.sortedTopics;
 
 export default function PlayerManager(props: PropsWithChildren<PlayerManagerProps>): JSX.Element {
   const { children, playerSources } = props;
@@ -95,8 +94,15 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
   const userNodes = useCurrentLayoutSelector(userNodesSelector);
   const globalVariables = useCurrentLayoutSelector(globalVariablesSelector);
 
-  const topicMappers = useExtensionCatalog(selectTopicMappers);
-  const topics = useMessagePipeline(selecteSortedTopics);
+  // const topicMappers = useExtensionCatalog(selectTopicMappers);
+  const [topicMappers] = useState<undefined | readonly RegisterTopicMapperArgs[]>([
+    (_topics: ReadonlyArray<{ name: string; schemaName?: string }>) => {
+      return new Map([
+        ["/CAM_FRONT/image_rect_compressed", ["/remapped_cam_front/image_rect_compressed"]],
+        ["/CAM_FRONT/camera_info", ["/remapped_cam_front/camera_info"]],
+      ]);
+    },
+  ]);
 
   const { recents, addRecent } = useIndexedDbRecents();
 
@@ -113,9 +119,8 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
       return undefined;
     }
 
-    const mappings = (topicMappers ?? []).map((mapper) => mapper(topics));
-    return new TopicMappingPlayer(basePlayer, mappings);
-  }, [basePlayer, topicMappers, topics]);
+    return new TopicMappingPlayer(basePlayer, topicMappers ?? []);
+  }, [basePlayer, topicMappers]);
 
   const player = useMemo(() => {
     if (!topicMapper) {
