@@ -257,7 +257,7 @@ export interface IRenderer extends EventEmitter<RendererEvents> {
    * @param allFrames - array of all preloaded messages
    * @returns {boolean} - whether the allFramesCursor has been updated and new messages were read in
    */
-  handleAllFramesMessages(allFrames?: readonly MessageEvent<unknown>[]): boolean;
+  handleAllFramesMessages(allFrames?: readonly MessageEvent[]): boolean;
 
   updateConfig(updateHandler: (draft: RendererConfig) => void): void;
 
@@ -305,7 +305,7 @@ export interface IRenderer extends EventEmitter<RendererEvents> {
 
   setSelectedRenderable(selection: PickedRenderable | undefined): void;
 
-  addMessageEvent(messageEvent: Readonly<MessageEvent<unknown>>): void;
+  addMessageEvent(messageEvent: Readonly<MessageEvent>): void;
 
   /**  Set desired render/display frame, will render using fallback if id is undefined or frame does not exist */
   setFollowFrameId(frameId: string | undefined): void;
