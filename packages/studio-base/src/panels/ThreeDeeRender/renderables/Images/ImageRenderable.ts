@@ -5,24 +5,8 @@
 import * as THREE from "three";
 import { assert } from "ts-essentials";
 
-import {
-  PinholeCameraModel,
-  decodeBGR8,
-  decodeBGRA8,
-  decodeBayerBGGR8,
-  decodeBayerGBRG8,
-  decodeBayerGRBG8,
-  decodeBayerRGGB8,
-  decodeFloat1c,
-  decodeMono16,
-  decodeMono8,
-  decodeRGB8,
-  decodeRGBA8,
-  decodeYUV,
-  decodeYUYV,
-} from "@foxglove/den/image";
+import { PinholeCameraModel } from "@foxglove/den/image";
 import { toNanoSec } from "@foxglove/rostime";
-import { RawImage } from "@foxglove/schemas";
 import { IRenderer } from "@foxglove/studio-base/panels/ThreeDeeRender/IRenderer";
 import { BaseUserData, Renderable } from "@foxglove/studio-base/panels/ThreeDeeRender/Renderable";
 import { stringToRgba } from "@foxglove/studio-base/panels/ThreeDeeRender/color";
@@ -30,7 +14,8 @@ import { projectPixel } from "@foxglove/studio-base/panels/ThreeDeeRender/render
 import { RosValue } from "@foxglove/studio-base/players/types";
 
 import { AnyImage } from "./ImageTypes";
-import { Image as RosImage, CameraInfo } from "../../ros";
+import { decodeRawImage } from "./decodeImage";
+import { CameraInfo } from "../../ros";
 
 export interface ImageRenderableSettings {
   visible: boolean;
@@ -235,7 +220,7 @@ export class ImageRenderable extends Renderable<ImageUserData> {
       }
 
       const texture = this.userData.texture as THREE.DataTexture;
-      rawImageToDataTexture(image, {}, texture);
+      decodeRawImage(image, {}, texture.image.data);
       texture.needsUpdate = true;
     }
     this.#materialNeedsUpdate = true;
@@ -303,11 +288,6 @@ export class ImageRenderable extends Renderable<ImageUserData> {
     }
   }
 }
-
-type RawImageOptions = {
-  minValue?: number;
-  maxValue?: number;
-};
 
 let tempColor = { r: 0, g: 0, b: 0, a: 0 };
 
@@ -399,67 +379,6 @@ function createGeometry(
   geometry.attributes.uv!.needsUpdate = true;
 
   return geometry;
-}
-
-function rawImageToDataTexture(
-  image: RosImage | RawImage,
-  options: RawImageOptions,
-  output: THREE.DataTexture,
-): void {
-  const { encoding, width, height } = image;
-  const is_bigendian = "is_bigendian" in image ? image.is_bigendian : false;
-  const rawData = image.data as Uint8Array;
-  switch (encoding) {
-    case "yuv422":
-      decodeYUV(image.data as Int8Array, width, height, output.image.data);
-      break;
-    // same thing as yuv422, but a distinct decoding from yuv422 and yuyv
-    case "uyuv":
-      decodeYUV(image.data as Int8Array, width, height, output.image.data);
-      break;
-    // change name in the future
-    case "yuyv":
-      decodeYUYV(image.data as Int8Array, width, height, output.image.data);
-      break;
-    case "rgb8":
-      decodeRGB8(rawData, width, height, output.image.data);
-      break;
-    case "rgba8":
-      decodeRGBA8(rawData, width, height, output.image.data);
-      break;
-    case "bgra8":
-      decodeBGRA8(rawData, width, height, output.image.data);
-      break;
-    case "bgr8":
-    case "8UC3":
-      decodeBGR8(rawData, width, height, output.image.data);
-      break;
-    case "32FC1":
-      decodeFloat1c(rawData, width, height, is_bigendian, output.image.data);
-      break;
-    case "bayer_rggb8":
-      decodeBayerRGGB8(rawData, width, height, output.image.data);
-      break;
-    case "bayer_bggr8":
-      decodeBayerBGGR8(rawData, width, height, output.image.data);
-      break;
-    case "bayer_gbrg8":
-      decodeBayerGBRG8(rawData, width, height, output.image.data);
-      break;
-    case "bayer_grbg8":
-      decodeBayerGRBG8(rawData, width, height, output.image.data);
-      break;
-    case "mono8":
-    case "8UC1":
-      decodeMono8(rawData, width, height, output.image.data);
-      break;
-    case "mono16":
-    case "16UC1":
-      decodeMono16(rawData, width, height, is_bigendian, output.image.data, options);
-      break;
-    default:
-      throw new Error(`Unsupported encoding ${encoding}`);
-  }
 }
 
 const bitmapDimensionsEqual = (a?: ImageBitmap, b?: ImageBitmap) =>

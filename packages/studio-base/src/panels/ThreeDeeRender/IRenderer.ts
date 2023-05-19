@@ -13,12 +13,13 @@ import { LabelPool } from "@foxglove/three-text";
 import { Input } from "./Input";
 import { ModelCache, MeshUpAxis } from "./ModelCache";
 import { PickedRenderable } from "./Picker";
-import { SceneExtension } from "./SceneExtension";
+import { PartialMessageEvent, SceneExtension } from "./SceneExtension";
 import { SettingsManager } from "./SettingsManager";
 import { SharedGeometry } from "./SharedGeometry";
 import { CameraState } from "./camera";
 import { DetailLevel } from "./lod";
 import { LayerSettingsTransform } from "./renderables/FrameAxes";
+import { AnyImage } from "./renderables/Images/ImageTypes";
 import { MeasurementTool } from "./renderables/MeasurementTool";
 import { PublishClickTool, PublishClickType } from "./renderables/PublishClickTool";
 import { MarkerPool } from "./renderables/markers/MarkerPool";
@@ -302,6 +303,9 @@ export interface IRenderer extends EventEmitter<RendererEvents> {
   canResetView(): boolean;
   /** Reset any manual view modifications (image mode only). */
   resetView(): void;
+
+  /** Return the currently displayed image (image mode only). */
+  getCurrentImage(): { event: PartialMessageEvent<AnyImage>; normalized: AnyImage } | undefined;
 
   setSelectedRenderable(selection: PickedRenderable | undefined): void;
 

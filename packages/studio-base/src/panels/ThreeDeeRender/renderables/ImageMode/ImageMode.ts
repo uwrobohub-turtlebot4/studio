@@ -47,7 +47,7 @@ import {
 } from "../../ros";
 import { topicIsConvertibleToSchema } from "../../topicIsConvertibleToSchema";
 import { ICameraHandler } from "../ICameraHandler";
-import { decodeCompressedImageToBitmap } from "../Images/decodeCompressedImageToBitmap";
+import { decodeCompressedImageToBitmap } from "../Images/decodeImage";
 import { getTopicMatchPrefix, sortPrefixMatchesToFront } from "../Images/topicPrefixMatching";
 
 const IMAGE_TOPIC_PATH = ["imageMode", "imageTopic"];
@@ -98,6 +98,9 @@ export class ImageMode
   #dragStartPanOffset = new THREE.Vector2();
   #dragStartMouseCoords = new THREE.Vector2();
   #hasModifiedView = false;
+
+  // Will need to change when synchronization is implemented (FG-2686)
+  #latestImage: { event: PartialMessageEvent<AnyImage>; normalized: AnyImage } | undefined;
 
   // eslint-disable-next-line @foxglove/no-boolean-parameters
   #setHasCalibrationTopic: (hasCalibrationTopic: boolean) => void;
@@ -241,6 +244,7 @@ export class ImageMode
     this.#imageRenderable?.dispose();
     this.#imageRenderable?.removeFromParent();
     this.#imageRenderable = undefined;
+    this.#latestImage = undefined;
     this.#clearCameraModel();
     super.removeAllRenderables();
   }
@@ -553,6 +557,8 @@ export class ImageMode
 
     const renderable = this.#getImageRenderable(topic, receiveTime, image, frameId);
 
+    this.#latestImage = { event: messageEvent, normalized: image };
+
     if (this.#cameraModel) {
       renderable.userData.cameraInfo = this.#cameraModel.info;
       renderable.setCameraModel(this.#cameraModel.model);
@@ -798,6 +804,12 @@ export class ImageMode
   #handleErrorChange = (): void => {
     this.updateSettingsTree();
   };
+
+  public getLatestImage():
+    | { event: PartialMessageEvent<AnyImage>; normalized: AnyImage }
+    | undefined {
+    return this.#latestImage;
+  }
 }
 
 function getFrameIdFromImage(image: AnyImage) {

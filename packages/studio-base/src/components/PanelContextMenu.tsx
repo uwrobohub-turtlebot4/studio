@@ -32,14 +32,8 @@ export type PanelContextMenuItem =
     };
 
 type PanelContextMenuProps = {
-  /**
-   * Function that returns a list of menu items, optionally dependent on the x,y
-   * position of the click.
-   */
-  itemsForClickPosition: (position: {
-    x: number;
-    y: number;
-  }) => DeepReadonly<PanelContextMenuItem[]>;
+  /** List of menu items */
+  items: DeepReadonly<PanelContextMenuItem[]>;
 };
 
 /**
@@ -47,7 +41,7 @@ type PanelContextMenuProps = {
  * must be a child of a Panel component to work.
  */
 export function PanelContextMenu(props: PanelContextMenuProps): JSX.Element {
-  const { itemsForClickPosition } = props;
+  const { items } = props;
 
   const rootRef = useRef<HTMLDivElement>(ReactNull);
 
@@ -55,17 +49,11 @@ export function PanelContextMenu(props: PanelContextMenuProps): JSX.Element {
 
   const handleClose = useCallback(() => setPosition(undefined), []);
 
-  const [items, setItems] = useState<undefined | DeepReadonly<PanelContextMenuItem[]>>();
-
-  const listener = useCallback(
-    (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setPosition({ x: event.clientX, y: event.clientY });
-      setItems(itemsForClickPosition({ x: event.clientX, y: event.clientY }));
-    },
-    [itemsForClickPosition],
-  );
+  const listener = useCallback((event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setPosition({ x: event.clientX, y: event.clientY });
+  }, []);
 
   useEffect(() => {
     const element = rootRef.current;
@@ -92,7 +80,7 @@ export function PanelContextMenu(props: PanelContextMenuProps): JSX.Element {
           dense: true,
         }}
       >
-        {(items ?? []).map((item, index) => {
+        {items.map((item, index) => {
           if (item.type === "divider") {
             return <Divider variant="middle" key={`divider_${index}`} />;
           }

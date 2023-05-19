@@ -4,6 +4,7 @@
 
 import { StoryObj } from "@storybook/react";
 import { fireEvent } from "@storybook/testing-library";
+import { useMemo } from "react";
 import { v4 as uuid } from "uuid";
 
 import Panel from "@foxglove/studio-base/components/Panel";
@@ -21,16 +22,19 @@ export default {
 const DUMMY_CLASS = uuid();
 
 function DummyPanel(): JSX.Element {
-  const items: PanelContextMenuItem[] = [
-    { type: "item", label: "Download Image", onclick: () => undefined },
-    { type: "item", label: "Flip Horizontal", onclick: () => undefined },
-    { type: "item", label: "Flip Vertical", onclick: () => undefined },
-  ];
+  const items: PanelContextMenuItem[] = useMemo(
+    () => [
+      { type: "item", label: "Download Image", onclick: () => undefined },
+      { type: "item", label: "Flip Horizontal", onclick: () => undefined },
+      { type: "item", label: "Flip Vertical", onclick: () => undefined },
+    ],
+    [],
+  );
 
   return (
     <>
       <PanelToolbar />
-      <PanelContextMenu itemsForClickPosition={() => items} />
+      <PanelContextMenu items={items} />
       <div
         className={DUMMY_CLASS}
         style={{

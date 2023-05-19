@@ -329,7 +329,7 @@ export function ImageView({ context }: Props): JSX.Element {
     await downloadImage(lastImageMessageRef.current, topic, config);
   }, [imageTopics, cameraTopic, config]);
 
-  const contextMenuItemsForClickPosition = useCallback<() => PanelContextMenuItem[]>(
+  const contextMenuItems = useMemo<PanelContextMenuItem[]>(
     () => [
       { type: "item", label: "Download image", onclick: doDownloadImage },
       { type: "divider" },
@@ -401,7 +401,7 @@ export function ImageView({ context }: Props): JSX.Element {
           [classes.screenshotTest]: inScreenshotTests(),
         })}
       >
-        <PanelContextMenu itemsForClickPosition={contextMenuItemsForClickPosition} />
+        <PanelContextMenu items={contextMenuItems} />
         <Stack fullWidth fullHeight>
           {/* Always render the ImageCanvas because it's expensive to unmount and start up. */}
           <ImageCanvas

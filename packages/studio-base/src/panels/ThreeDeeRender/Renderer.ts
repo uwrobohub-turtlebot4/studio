@@ -41,7 +41,7 @@ import { LineMaterial } from "./LineMaterial";
 import { ModelCache, DEFAULT_MESH_UP_AXIS } from "./ModelCache";
 import { PickedRenderable, Picker } from "./Picker";
 import type { Renderable } from "./Renderable";
-import { SceneExtension } from "./SceneExtension";
+import { PartialMessageEvent, SceneExtension } from "./SceneExtension";
 import { ScreenOverlay } from "./ScreenOverlay";
 import { SettingsManager, SettingsTreeEntry } from "./SettingsManager";
 import { SharedGeometry } from "./SharedGeometry";
@@ -61,6 +61,7 @@ import { FrameAxes } from "./renderables/FrameAxes";
 import { Grids } from "./renderables/Grids";
 import { ImageMode } from "./renderables/ImageMode/ImageMode";
 import { Images } from "./renderables/Images";
+import { AnyImage } from "./renderables/Images/ImageTypes";
 import { LaserScans } from "./renderables/LaserScans";
 import { Markers } from "./renderables/Markers";
 import { MeasurementTool } from "./renderables/MeasurementTool";
@@ -816,6 +817,12 @@ export class Renderer extends EventEmitter<RendererEvents> implements IRenderer 
   public resetView(): void {
     this.#imageModeExtension?.resetViewModifications();
     this.queueAnimationFrame();
+  }
+
+  public getCurrentImage():
+    | { event: PartialMessageEvent<AnyImage>; normalized: AnyImage }
+    | undefined {
+    return this.#imageModeExtension?.getLatestImage();
   }
 
   public setSelectedRenderable(selection: PickedRenderable | undefined): void {

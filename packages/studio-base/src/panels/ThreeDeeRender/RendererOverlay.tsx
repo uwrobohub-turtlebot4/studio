@@ -13,15 +13,22 @@ import {
   Paper,
   useTheme,
 } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLongPress } from "react-use";
 import { makeStyles } from "tss-react/mui";
 
+import Logger from "@foxglove/log";
 import { LayoutActions } from "@foxglove/studio";
+import {
+  PanelContextMenu,
+  PanelContextMenuItem,
+} from "@foxglove/studio-base/components/PanelContextMenu";
 import PublishGoalIcon from "@foxglove/studio-base/components/PublishGoalIcon";
 import PublishPointIcon from "@foxglove/studio-base/components/PublishPointIcon";
 import PublishPoseEstimateIcon from "@foxglove/studio-base/components/PublishPoseEstimateIcon";
+import { downloadFiles } from "@foxglove/studio-base/util/download";
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 import { InteractionContextMenu, Interactions, SelectionObject, TabType } from "./Interactions";
@@ -30,8 +37,11 @@ import { Renderable } from "./Renderable";
 import { useRenderer, useRendererEvent } from "./RendererContext";
 import { Stats } from "./Stats";
 import { MouseEventObject } from "./camera";
+import { decodeCompressedImageToBitmap, decodeRawImage } from "./renderables/Images/decodeImage";
 import { PublishClickType } from "./renderables/PublishClickTool";
 import { InterfaceMode } from "./types";
+
+const log = Logger.getLogger(__filename);
 
 const PublishClickIcons: Record<PublishClickType, React.ReactNode> = {
   pose: <PublishGoalIcon fontSize="inherit" />,
@@ -87,7 +97,10 @@ export function RendererOverlay(props: {
   onChangePublishClickType: (_: PublishClickType) => void;
   onClickPublish: () => void;
   timezone: string | undefined;
+  /** Override default downloading behavior, used for Storybook */
+  onDownloadImage?: (blob: Blob, fileName: string) => void;
 }): JSX.Element {
+  const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation("threeDee");
   const { classes } = useStyles();
   const [clickedPosition, setClickedPosition] = useState<{ clientX: number; clientY: number }>({
@@ -277,8 +290,68 @@ export function RendererOverlay(props: {
     </Button>
   );
 
+  const { onDownloadImage } = props;
+  const doDownloadImage = useCallback(async () => {
+    const currentImage = renderer?.getCurrentImage();
+    if (!currentImage) {
+      return;
+    }
+
+    const image = currentImage.normalized;
+    const stamp = "header" in image ? image.header.stamp : image.timestamp;
+    let bitmap: ImageBitmap;
+    try {
+      if ("format" in image) {
+        bitmap = await decodeCompressedImageToBitmap(image);
+      } else {
+        const imageData = new ImageData(image.width, image.height);
+        decodeRawImage(image, {}, imageData.data);
+        bitmap = await createImageBitmap(imageData);
+      }
+
+      const { width, height } = bitmap;
+
+      // context: https://stackoverflow.com/questions/37135417/download-canvas-as-png-in-fabric-js-giving-network-error
+      // read the canvas data as an image (png)
+      await new Promise<void>((resolve) => {
+        // re-render the image onto a new canvas to download the original image
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("bitmaprenderer");
+        if (!ctx) {
+          throw new Error("Unable to create rendering context for image download");
+        }
+        ctx.transferFromImageBitmap(bitmap);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            throw new Error(`Failed to create an image from ${width}x${height} canvas`);
+          }
+          // name the image the same name as the topic
+          // note: the / characters in the file name will be replaced with _ by the browser
+          // remove any leading / so the image name doesn't start with _
+          const topicName = currentImage.event.topic.replace(/^\/+/, "");
+          const fileName = `${topicName}-${stamp.sec}-${stamp.nsec}`;
+          if (onDownloadImage) {
+            onDownloadImage(blob, fileName);
+          } else {
+            downloadFiles([{ blob, fileName }]);
+          }
+          resolve();
+        }, "image/png");
+      });
+    } catch (error) {
+      log.error(error);
+      enqueueSnackbar((error as Error).toString(), { variant: "error" });
+    }
+  }, [renderer, onDownloadImage, enqueueSnackbar]);
+
+  const contextMenuItems = useMemo<PanelContextMenuItem[]>(
+    () => [{ type: "item", label: "Download image", onclick: doDownloadImage }],
+    [doDownloadImage],
+  );
+
   return (
     <>
+      <PanelContextMenu items={contextMenuItems} />
       <div
         style={{
           position: "absolute",

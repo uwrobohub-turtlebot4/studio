@@ -18,12 +18,17 @@ import { InterfaceMode } from "./types";
 function initPanel(
   crash: ReturnType<typeof useCrash>,
   interfaceMode: InterfaceMode,
+  onDownloadImage: ((blob: Blob, fileName: string) => void) | undefined,
   context: PanelExtensionContext,
 ) {
   ReactDOM.render(
     <StrictMode>
       <CaptureErrorBoundary onError={crash}>
-        <ThreeDeeRender context={context} interfaceMode={interfaceMode} />
+        <ThreeDeeRender
+          context={context}
+          interfaceMode={interfaceMode}
+          onDownloadImage={onDownloadImage}
+        />
       </CaptureErrorBoundary>
     </StrictMode>,
     context.panelElement,
@@ -34,15 +39,16 @@ function initPanel(
 }
 
 type Props = {
-  config: unknown;
-  saveConfig: SaveConfig<unknown>;
+  config: Record<string, unknown>;
+  saveConfig: SaveConfig<Record<string, unknown>>;
+  onDownloadImage?: (blob: Blob, fileName: string) => void;
 };
 
 function ThreeDeeRenderAdapter(interfaceMode: InterfaceMode, props: Props) {
   const crash = useCrash();
   const boundInitPanel = useMemo(
-    () => initPanel.bind(undefined, crash, interfaceMode),
-    [crash, interfaceMode],
+    () => initPanel.bind(undefined, crash, interfaceMode, props.onDownloadImage),
+    [crash, interfaceMode, props.onDownloadImage],
   );
 
   return (
@@ -62,7 +68,7 @@ export const ThreeDeePanel = Panel(
   }),
 );
 
-export const ImagePanel = Panel(
+export const ImagePanel = Panel<Record<string, unknown>, Props>(
   Object.assign(ThreeDeeRenderAdapter.bind(undefined, "image"), {
     panelType: "Image",
     defaultConfig: {},
