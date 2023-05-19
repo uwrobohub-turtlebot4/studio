@@ -11,9 +11,8 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { ReactRenderer, StoryFn, StoryObj } from "@storybook/react";
+import { StoryFn, StoryObj } from "@storybook/react";
 import { userEvent, within } from "@storybook/testing-library";
-import { PlayFunction } from "@storybook/types";
 import { range } from "lodash";
 
 import Autocomplete from "@foxglove/studio-base/components/Autocomplete";
@@ -31,11 +30,7 @@ export default {
   ],
 };
 
-const clickInput: PlayFunction<ReactRenderer> = async ({
-  canvasElement,
-}: {
-  canvasElement: HTMLElement;
-}) => {
+const clickInput: StoryObj["play"] = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   const canvas = within(canvasElement);
   const input = await canvas.findByTestId("autocomplete-textfield");
 
