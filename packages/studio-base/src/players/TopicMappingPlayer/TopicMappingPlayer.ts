@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { Immutable as Im } from "immer";
 import { transform } from "lodash";
 
 import { Time } from "@foxglove/rostime";
@@ -88,17 +89,15 @@ function mapSubscriptions(
 export class TopicMappingPlayer implements Player {
   #listener?: (arg0: PlayerState) => Promise<void>;
   readonly #player: Player;
-  readonly #inverseMappings: Map<string, string> = new Map([
-    ["/remapped_cam_front/image_rect_compressed", "/CAM_FRONT/image_rect_compressed"],
-    ["/remapped_cam_front/camera_info", "/CAM_FRONT/camera_info"],
-  ]);
-  readonly #mappings: Map<string, string> = new Map([
-    ["/CAM_FRONT/image_rect_compressed", "/remapped_cam_front/image_rect_compressed"],
-    ["/CAM_FRONT/camera_info", "/remapped_cam_front/camera_info"],
-  ]);
+  readonly #inverseMappings: Map<string, string>;
+  readonly #mappings: Map<string, string>;
 
-  public constructor(player: Player) {
+  public constructor(player: Player, mappings: Im<Map<string, string>[]>) {
     this.#player = player;
+
+    // Combine mappings into one map and build the inverse map.
+    this.#mappings = mappings.reduce((acc, value) => new Map(...acc, ...value), new Map());
+    this.#inverseMappings = new Map(Array.from(this.#mappings, (entry) => [entry[1], entry[0]]));
   }
 
   public setListener(listener: (playerState: PlayerState) => Promise<void>): void {

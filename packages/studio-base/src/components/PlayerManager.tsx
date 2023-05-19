@@ -17,13 +17,21 @@ import { useLatest, useMountedState } from "react-use";
 
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
-import { MessagePipelineProvider } from "@foxglove/studio-base/components/MessagePipeline";
+import {
+  MessagePipelineContext,
+  MessagePipelineProvider,
+  useMessagePipeline,
+} from "@foxglove/studio-base/components/MessagePipeline";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
 import {
   LayoutState,
   useCurrentLayoutActions,
   useCurrentLayoutSelector,
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
+import {
+  ExtensionCatalog,
+  useExtensionCatalog,
+} from "@foxglove/studio-base/context/ExtensionCatalogContext";
 import { useLayoutManager } from "@foxglove/studio-base/context/LayoutManagerContext";
 import { useNativeWindow } from "@foxglove/studio-base/context/NativeWindowContext";
 import PlayerSelectionContext, {
@@ -55,6 +63,9 @@ const userNodesSelector = (state: LayoutState) =>
 const globalVariablesSelector = (state: LayoutState) =>
   state.selectedLayout?.data?.globalVariables ?? EMPTY_GLOBAL_VARIABLES;
 
+const selectTopicMappers = (catalog: ExtensionCatalog) => catalog.installedTopicMappers;
+const selecteSortedTopics = (context: MessagePipelineContext) => context.sortedTopics;
+
 export default function PlayerManager(props: PropsWithChildren<PlayerManagerProps>): JSX.Element {
   const { children, playerSources } = props;
 
@@ -84,6 +95,9 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
   const userNodes = useCurrentLayoutSelector(userNodesSelector);
   const globalVariables = useCurrentLayoutSelector(globalVariablesSelector);
 
+  const topicMappers = useExtensionCatalog(selectTopicMappers);
+  const topics = useMessagePipeline(selecteSortedTopics);
+
   const { recents, addRecent } = useIndexedDbRecents();
 
   // We don't want to recreate the player when the these variables change, but we do want to
@@ -94,10 +108,14 @@ export default function PlayerManager(props: PropsWithChildren<PlayerManagerProp
   // the message pipeline
   const globalVariablesRef = useLatest(globalVariables);
 
-  const topicMapper = useMemo(
-    () => (basePlayer ? new TopicMappingPlayer(basePlayer) : undefined),
-    [basePlayer],
-  );
+  const topicMapper = useMemo(() => {
+    if (!basePlayer) {
+      return undefined;
+    }
+
+    const mappings = (topicMappers ?? []).map((mapper) => mapper(topics));
+    return new TopicMappingPlayer(basePlayer, mappings);
+  }, [basePlayer, topicMappers, topics]);
 
   const player = useMemo(() => {
     if (!topicMapper) {
