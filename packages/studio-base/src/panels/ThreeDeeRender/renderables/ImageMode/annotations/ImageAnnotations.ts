@@ -24,7 +24,7 @@ import { IMAGE_ANNOTATIONS_DATATYPES } from "../../../foxglove";
 import { IMAGE_MARKER_ARRAY_DATATYPES, IMAGE_MARKER_DATATYPES } from "../../../ros";
 import { topicIsConvertibleToSchema } from "../../../topicIsConvertibleToSchema";
 import { sortPrefixMatchesToFront } from "../../Images/topicPrefixMatching";
-import { ImageRenderState, MessageState } from "../MessageState";
+import { MessageHandlerState, MessageHandler } from "../MessageHandler";
 
 type TopicName = string & { __brand: "TopicName" };
 type SchemaName = string & { __brand: "SchemaName" };
@@ -43,7 +43,7 @@ interface ImageAnnotationsContext {
     handler: (messageEvent: MessageEvent<T>) => void,
   ): void;
   labelPool: LabelPool;
-  messageState: MessageState;
+  messageState: MessageHandler;
 }
 
 const ALL_SUPPORTED_SCHEMAS = new Set([
@@ -91,7 +91,7 @@ export class ImageAnnotations extends THREE.Object3D {
     this.#canvasWidth = context.initialCanvasWidth;
     this.#canvasHeight = context.initialCanvasHeight;
     this.#pixelRatio = context.initialPixelRatio;
-    context.messageState.addStateUpdateListener(this.#updateFromMessageState);
+    context.messageState.addListener(this.#updateFromMessageState);
   }
 
   public addSubscriptions(): void {
@@ -142,7 +142,7 @@ export class ImageAnnotations extends THREE.Object3D {
     }
   }
 
-  #updateFromMessageState = (newState: Partial<ImageRenderState>) => {
+  #updateFromMessageState = (newState: Partial<MessageHandlerState>) => {
     if (newState.annotationsByTopicSchema != undefined) {
       for (const { messageEvent, annotations } of newState.annotationsByTopicSchema.values()) {
         this.#handleMessage(messageEvent, annotations);
@@ -215,7 +215,7 @@ export class ImageAnnotations extends THREE.Object3D {
         draft.annotations.push(subscription);
       }
     });
-    this.#context.messageState.setRenderConfig({
+    this.#context.messageState.setConfig({
       annotationSubscriptions: this.#context.config().annotations ?? [],
     });
     const renderable = this.#renderablesByTopicAndSchemaName.get(

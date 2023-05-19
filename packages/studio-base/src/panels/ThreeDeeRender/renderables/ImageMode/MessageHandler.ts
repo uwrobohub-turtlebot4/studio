@@ -39,34 +39,35 @@ type MessageEventAnnotationsPair = {
   annotations: Annotation[];
 };
 
-export type SynchronizationItem = {
+type SynchronizationItem = {
   image?: PartialMessageEvent<AnyImage>;
   annotationsByTopicSchema: TwoKeyMap<string, string, MessageEventAnnotationsPair>;
 };
-type ImageRenderConfig = {
+
+type ImageModeConfig = {
   imageTopic: string | undefined;
   calibrationTopic: string | undefined;
   annotationSubscriptions: readonly ImageAnnotationSubscription[];
   synchronize: boolean;
 };
 
-export type ImageRenderState = {
+export type MessageHandlerState = {
   image?: PartialMessageEvent<AnyImage>;
   cameraInfo?: CameraInfo;
   annotationsByTopicSchema: TwoKeyMap<string, string, MessageEventAnnotationsPair>;
 };
-// TODO: rename
-export class MessageState {
-  #config: ImageRenderConfig;
-  #oldState: Partial<ImageRenderState> | undefined;
-  #state: ImageRenderState;
+
+export class MessageHandler {
+  #config: ImageModeConfig;
+  #oldState: Partial<MessageHandlerState> | undefined;
+  #state: MessageHandlerState;
   #tree: AVLTree<Time, SynchronizationItem>;
   #listeners: ((
-    newState: Partial<ImageRenderState>,
-    oldState: Partial<ImageRenderState> | undefined,
+    newState: Partial<MessageHandlerState>,
+    oldState: Partial<MessageHandlerState> | undefined,
   ) => void)[] = [];
 
-  public constructor(config: ImageRenderConfig) {
+  public constructor(config: ImageModeConfig) {
     this.#config = {
       ...config,
     };
@@ -75,78 +76,22 @@ export class MessageState {
     };
     this.#tree = new AVLTree<Time, SynchronizationItem>(compareTime);
   }
-
-  public numVisibleAnnotations(): number {
-    return this.#config.annotationSubscriptions.filter(({ settings }) => settings.visible).length;
-  }
-
-  public addStateUpdateListener(
+  public addListener(
     listener: (
-      newState: Partial<ImageRenderState>,
-      oldState: Partial<ImageRenderState> | undefined,
+      newState: Partial<MessageHandlerState>,
+      oldState: Partial<MessageHandlerState> | undefined,
     ) => void,
   ): void {
     this.#listeners.push(listener);
   }
 
-  public removeStateUpdateListener(
+  public removeListener(
     listener: (
-      newState: Partial<ImageRenderState>,
-      oldState: Partial<ImageRenderState> | undefined,
+      newState: Partial<MessageHandlerState>,
+      oldState: Partial<MessageHandlerState> | undefined,
     ) => void,
   ): void {
     this.#listeners.filter((fn) => fn !== listener);
-  }
-
-  public clear(): void {
-    this.#state = {
-      annotationsByTopicSchema: new TwoKeyMap(),
-    };
-    this.#tree.clear();
-    this.#oldState = undefined;
-  }
-
-  public setRenderConfig(newConfig: Partial<ImageRenderConfig>): void {
-    let changed = false;
-
-    if (newConfig.synchronize != undefined && newConfig.synchronize !== this.#config.synchronize) {
-      changed = true;
-    }
-
-    if (this.#config.imageTopic !== newConfig.imageTopic) {
-      this.#state.image = undefined;
-      changed = true;
-    }
-
-    if (this.#config.calibrationTopic !== newConfig.calibrationTopic) {
-      this.#state.cameraInfo = undefined;
-      changed = true;
-    }
-
-    if (
-      newConfig.annotationSubscriptions != undefined &&
-      this.#config.annotationSubscriptions !== newConfig.annotationSubscriptions
-    ) {
-      for (const { topic, schemaName } of this.#config.annotationSubscriptions) {
-        const newSubsHasOldSub = newConfig.annotationSubscriptions.find(
-          ({ topic: newTopic, schemaName: newSchemaName }) =>
-            topic === newTopic && schemaName === newSchemaName,
-        );
-        if (!newSubsHasOldSub) {
-          this.#state.annotationsByTopicSchema.delete(topic, schemaName);
-          changed = true;
-        }
-      }
-    }
-
-    this.#config = {
-      ...this.#config,
-      ...newConfig,
-    };
-
-    if (changed) {
-      this.#emitState();
-    }
   }
 
   public handleRosRawImage = (messageEvent: PartialMessageEvent<RosImage>): void => {
@@ -173,6 +118,7 @@ export class MessageState {
       message: image,
     };
     this.#state.image = normalizedImageMessage;
+
     if (!this.#config.synchronize) {
       this.#emitState();
       return;
@@ -238,17 +184,68 @@ export class MessageState {
     this.#emitState();
   };
 
+  public setConfig(newConfig: Partial<ImageModeConfig>): void {
+    let changed = false;
+
+    if (newConfig.synchronize != undefined && newConfig.synchronize !== this.#config.synchronize) {
+      changed = true;
+    }
+
+    if (this.#config.imageTopic !== newConfig.imageTopic) {
+      this.#state.image = undefined;
+      changed = true;
+    }
+
+    if (this.#config.calibrationTopic !== newConfig.calibrationTopic) {
+      this.#state.cameraInfo = undefined;
+      changed = true;
+    }
+
+    if (
+      newConfig.annotationSubscriptions != undefined &&
+      this.#config.annotationSubscriptions !== newConfig.annotationSubscriptions
+    ) {
+      for (const { topic, schemaName } of this.#config.annotationSubscriptions) {
+        const newSubsHasOldSub = newConfig.annotationSubscriptions.find(
+          ({ topic: newTopic, schemaName: newSchemaName }) =>
+            topic === newTopic && schemaName === newSchemaName,
+        );
+        if (!newSubsHasOldSub) {
+          this.#state.annotationsByTopicSchema.delete(topic, schemaName);
+          changed = true;
+        }
+      }
+    }
+
+    this.#config = {
+      ...this.#config,
+      ...newConfig,
+    };
+
+    if (changed) {
+      this.#emitState();
+    }
+  }
+
+  public clear(): void {
+    this.#state = {
+      annotationsByTopicSchema: new TwoKeyMap(),
+    };
+    this.#tree.clear();
+    this.#oldState = undefined;
+  }
+
   #emitState() {
     const state = this.#getState();
     this.#listeners.forEach((fn) => fn(state, this.#oldState));
     this.#oldState = { ...state };
   }
 
-  #getState(): Partial<ImageRenderState> {
+  #getState(): Partial<MessageHandlerState> {
     if (this.#config.synchronize) {
       const validEntry = findSynchronizedSetAndRemoveOlderItems(
         this.#tree,
-        this.numVisibleAnnotations(),
+        this.#numVisibleAnnotations(),
       );
       if (validEntry) {
         return {
@@ -267,7 +264,12 @@ export class MessageState {
       annotationsByTopicSchema: this.#state.annotationsByTopicSchema,
     };
   }
+
+  #numVisibleAnnotations(): number {
+    return this.#config.annotationSubscriptions.filter(({ settings }) => settings.visible).length;
+  }
 }
+
 /** Find the newest entry where we have everything synchronized */
 function findSynchronizedSetAndRemoveOlderItems(
   tree: AVLTree<Time, SynchronizationItem>,

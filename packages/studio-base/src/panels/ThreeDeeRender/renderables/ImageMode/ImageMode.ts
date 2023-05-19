@@ -21,7 +21,7 @@ import {
 import { makePose } from "@foxglove/studio-base/panels/ThreeDeeRender/transforms";
 
 import { DEFAULT_ZOOM_MODE, ImageModeCamera } from "./ImageModeCamera";
-import { MessageState, ImageRenderState } from "./MessageState";
+import { MessageHandler, MessageHandlerState } from "./MessageHandler";
 import { ImageAnnotations } from "./annotations/ImageAnnotations";
 import type { IRenderer, ImageModeConfig } from "../../IRenderer";
 import { PartialMessageEvent, SceneExtension } from "../../SceneExtension";
@@ -97,7 +97,7 @@ export class ImageMode
 
   #imageRenderable: ImageRenderable | undefined;
 
-  #messageState: MessageState;
+  #messageHandler: MessageHandler;
 
   #dragStartPanOffset = new THREE.Vector2();
   #dragStartMouseCoords = new THREE.Vector2();
@@ -137,13 +137,13 @@ export class ImageMode
     this.#camera.setZoomMode(renderer.config.imageMode.zoomMode ?? "fit");
 
     const config = this.#getImageModeSettings();
-    this.#messageState = new MessageState({
+    this.#messageHandler = new MessageHandler({
       calibrationTopic: config.calibrationTopic,
       imageTopic: config.imageTopic,
       synchronize: config.synchronize,
       annotationSubscriptions: config.annotations ?? [],
     });
-    this.#messageState.addStateUpdateListener(this.#updateFromMessageState);
+    this.#messageHandler.addListener(this.#updateFromMessageState);
 
     renderer.settings.errors.on("update", this.#handleErrorChange);
     renderer.settings.errors.on("clear", this.#handleErrorChange);
@@ -165,7 +165,7 @@ export class ImageMode
         renderer.addSchemaSubscriptions(schemaNames, handler);
       },
       labelPool: renderer.labelPool,
-      messageState: this.#messageState,
+      messageState: this.#messageHandler,
     });
     this.add(this.#annotations);
 
@@ -216,25 +216,25 @@ export class ImageMode
   public override addSubscriptionsToRenderer(): void {
     const renderer = this.renderer;
     renderer.addSchemaSubscriptions(ALL_SUPPORTED_CALIBRATION_SCHEMAS, {
-      handler: this.#messageState.handleCameraInfo,
+      handler: this.#messageHandler.handleCameraInfo,
       shouldSubscribe: this.#cameraInfoShouldSubscribe,
     });
 
     renderer.addSchemaSubscriptions(ROS_IMAGE_DATATYPES, {
-      handler: this.#messageState.handleRosRawImage,
+      handler: this.#messageHandler.handleRosRawImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     renderer.addSchemaSubscriptions(ROS_COMPRESSED_IMAGE_DATATYPES, {
-      handler: this.#messageState.handleRosCompressedImage,
+      handler: this.#messageHandler.handleRosCompressedImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
 
     renderer.addSchemaSubscriptions(RAW_IMAGE_DATATYPES, {
-      handler: this.#messageState.handleRawImage,
+      handler: this.#messageHandler.handleRawImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     renderer.addSchemaSubscriptions(COMPRESSED_IMAGE_DATATYPES, {
-      handler: this.#messageState.handleCompressedImage,
+      handler: this.#messageHandler.handleCompressedImage,
       shouldSubscribe: this.#imageShouldSubscribe,
     });
     this.#annotations.addSubscriptions();
@@ -255,7 +255,7 @@ export class ImageMode
     this.#imageRenderable?.dispose();
     this.#imageRenderable?.removeFromParent();
     this.#imageRenderable = undefined;
-    this.#messageState.clear();
+    this.#messageHandler.clear();
     this.#clearCameraModel();
     super.removeAllRenderables();
   }
@@ -412,7 +412,7 @@ export class ImageMode
     // };
     fields.synchronize = {
       input: "boolean",
-      label: "Synchronize timestamps",
+      label: "Sync timestamps",
       value: synchronize,
     };
     // fields.TODO_smooth = {
@@ -516,7 +516,7 @@ export class ImageMode
       if (config.synchronize !== prevImageModeConfig.synchronize) {
         this.removeAllRenderables();
       }
-      this.#messageState.setRenderConfig({
+      this.#messageHandler.setConfig({
         synchronize: config.synchronize,
         imageTopic: config.imageTopic,
         calibrationTopic: config.calibrationTopic,
@@ -540,8 +540,8 @@ export class ImageMode
   };
 
   #updateFromMessageState = (
-    newState: Partial<ImageRenderState>,
-    oldState: Partial<ImageRenderState> | undefined,
+    newState: Partial<MessageHandlerState>,
+    oldState: Partial<MessageHandlerState> | undefined,
   ): void => {
     if (newState.image != undefined && newState.image !== oldState?.image) {
       this.#handleImageChange(newState.image, newState.image.message as AnyImage);
